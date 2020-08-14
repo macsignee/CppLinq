@@ -1179,6 +1179,7 @@ namespace macsignee {
             return Enumerable<TContainer>(initialList);
         }
 
+#pragma region C-style array implementation
         template <typename T, std::size_t N>
         inline auto From(const T(&array)[N]) {
             Enumerable<std::array<T, N>> result;
@@ -1194,6 +1195,31 @@ namespace macsignee {
                 std::copy(ary_ptr, ary_ptr + size, std::back_inserter(result.value));
             return result;
         }
+#pragma endregion
+
+#pragma region MFC CArray implementation
+#ifdef _AFX
+        template<typename T, typename TArg>
+        const T* cbegin(const CArray<T, TArg>& carray) {
+            return (&carray.GetAt(0));
+        }
+
+        template<typename T, typename TArg>
+        const T* cend(const CArray<T, TArg>& carray) {
+            const T* last = &carray.GetAt(carray.GetSize() - 1);
+            return (last + 1);
+        }
+
+        template <typename T, typename TArg>
+        inline auto From(const CArray<T, TArg>& carray) {
+            Enumerable<std::vector<T>> result;
+            result.value.reserve(carray.GetSize());
+            if (carray.GetSize() > 0)
+                std::copy(cbegin(carray), cend(carray), std::back_inserter(result.value));
+            return result;
+        }
+#endif
+#pragma endregion 
 
         inline auto Enumerable_Range(int start, int end) {
             return Enumerable<std::vector<int>>::Range(start, end);

@@ -12,7 +12,7 @@
 #define new DEBUG_NEW
 #endif
 
-
+using namespace macsignee::cppLinq;
 // CppLinqApp
 
 BEGIN_MESSAGE_MAP(CppLinqApp, CWinApp)
@@ -47,6 +47,13 @@ BOOL CppLinqApp::InitInstance()
 
 	// MFC コントロールでテーマを有効にするために、"Windows ネイティブ" のビジュアル マネージャーをアクティブ化
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
+
+
+	//CArray<int, int> ary;
+	//for (size_t idx = 0; idx < 10; idx++) {
+	//	ary.Add(idx);
+	//}
+	//auto a = From(ary);
 
 	// 標準初期化
 	// これらの機能を使わずに最終的な実行可能ファイルの
