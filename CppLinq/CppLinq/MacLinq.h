@@ -3,26 +3,6 @@
 //	Title  : C++ LINQ super early test version
 //	Module : LINQ Header
 //	Author : Shigene makoto
-//-----------------------------------------------------------------------------------------------
-// 実装済みの 関数は下記の通り
-// auto Where(TFunction predicate) 
-// auto OrderBy(TFunction sorter) 
-// auto Select(TFunction selector)
-// auto ForEach(TFunction function)
-// bool Contains(const TElement& value, TFunction finder) const 
-// bool Contains(const TElement& value) const  ※ operator== がある場合に使用できる
-// size_t Count() const
-// bool Any() const 
-// bool All() const
-// auto Skip(size_t count)
-// auto Take(size_t count)
-// auto FirstOrDefault() const
-// auto LastOrDefault() const
-// auto ElementAtOrDefault() const
-// auto SingleOrDefault() const
-// auto ToVector() const
-// auto ToList() const
-//-----------------------------------------------------------------------------------------------
 #include <algorithm>
 #include <numeric>
 #include <functional>
@@ -42,7 +22,7 @@
 #include<optional>
 #endif
 
-namespace macsignee{
+namespace macsignee {
 namespace cppLinq {
 
 #pragma region utilities
@@ -121,7 +101,6 @@ namespace cppLinq {
             Enumerable<std::vector<T>> dest;
             dest.value.reserve(count_impl<TSource>()(source));
             auto last = std::copy_if(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), predicate);
-            //dest.value.erase(last, dest.value.end());
             return dest;
         }
 
@@ -180,7 +159,7 @@ namespace cppLinq {
             }
         };
 
-        template <typename T, size_t N>
+        template <typename T, std::size_t N>
         struct where_impl<std::array<T, N>>
         {
             using cont_type = typename std::array<T, N>;
@@ -192,9 +171,9 @@ namespace cppLinq {
         //-------------------
         // where with index 
         template <class TSource>
-        static auto copy_filtered_index(TSource&& source, std::function<bool(const typename TSource::value_type&, size_t)> predicate) {
+        static auto copy_filtered_index(TSource&& source, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
             Enumerable<TSource> dest(std::forward<TSource>(source));
-            size_t index = 0;
+            std::size_t index = 0;
             for (auto itr = std::begin(dest.value); itr != std::end(dest.value); ) {
                 if (predicate(*itr, index)) {
                     ++itr; ++index;
@@ -206,10 +185,10 @@ namespace cppLinq {
         }
 
         template <class TSource, typename T>
-        static auto filter_copy_toV_index(TSource&& source, size_t size, std::function<bool(const typename TSource::value_type&, size_t)> predicate) {
+        static auto filter_copy_toV_index(TSource&& source, std::size_t size, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
             Enumerable<std::vector<T, std::allocator<T>>> dest;
             dest.value.reserve(size);
-            size_t index = 0;
+            std::size_t index = 0;
             auto itr_ss = move_itr(std::begin(source));
             const auto itr_se = move_itr(std::end(source));
             auto itr_d = inserter_bk(dest.value);
@@ -227,7 +206,7 @@ namespace cppLinq {
         template <class TSource>
         struct where_index_impl
         {
-            auto operator()(TSource&& source, std::function<bool(const typename TSource::value_type&, size_t)>  predicate) {
+            auto operator()(TSource&& source, std::function<bool(const typename TSource::value_type&, std::size_t)>  predicate) {
                 return copy_filtered_index<TSource>(std::forward<TSource>(source), predicate);
             }
         };
@@ -236,7 +215,7 @@ namespace cppLinq {
         struct where_index_impl<std::vector<T, TAllocator>>
         {
             using cont_type = typename std::vector<T, TAllocator>;
-            auto operator()(cont_type&& source, std::function<bool(const typename T&, size_t)> predicate) {
+            auto operator()(cont_type&& source, std::function<bool(const typename T&, std::size_t)> predicate) {
                 return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), std::size(source), predicate);
             }
         };
@@ -245,16 +224,16 @@ namespace cppLinq {
         struct where_index_impl<std::forward_list<T, TAllocator>>
         {
             using cont_type = typename std::forward_list<T, TAllocator>;
-            auto operator()(cont_type&& source, std::function<bool(const T&, size_t)> predicate) {
+            auto operator()(cont_type&& source, std::function<bool(const T&, std::size_t)> predicate) {
                 return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), count_impl<cont_type>()(source), predicate);
             }
         };
 
-        template <typename T, size_t N>
+        template <typename T, std::size_t N>
         struct where_index_impl<std::array<T, N>>
         {
             using cont_type = typename std::array<T, N>;
-            auto operator()(cont_type&& source, std::function<bool(const T&, size_t index)> predicate) {
+            auto operator()(cont_type&& source, std::function<bool(const T&, std::size_t index)> predicate) {
                 return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), N, predicate);
             }
         };
@@ -313,7 +292,7 @@ namespace cppLinq {
         };
 
         //-------------------
-       // order_by
+        // order_by
         template <class TSource, typename TGenKey, typename TComparer>
         struct order_by_impl
         {
@@ -373,17 +352,17 @@ namespace cppLinq {
         template <class TSource>
         struct skip_impl
         {
-            auto operator()(TSource&& source, size_t count) {
-                size_t data_size = count_impl<TSource>()(source);
+            auto operator()(TSource&& source, std::size_t count) {
+                std::size_t data_size = count_impl<TSource>()(source);
                 return range_copy<TSource::iterator, TSource>(std::next(std::begin(source), count), std::end(source), data_size == 0 || count == 0 || data_size < count);
             }
         };
 
-        template <typename T, size_t N>
+        template <typename T, std::size_t N>
         struct skip_impl<std::array<T, N>>
         {
             using cont_type = typename std::array<T, N>;
-            auto operator()(cont_type&& source, size_t count) {
+            auto operator()(cont_type&& source, std::size_t count) {
                 return range_copy<cont_type::iterator, std::vector<T>>(std::next(std::begin(source), count), std::end(source), N == 0 || count == 0 || N < count);
             }
         };
@@ -393,8 +372,8 @@ namespace cppLinq {
         template <class TSource>
         struct take_impl
         {
-            auto operator()(TSource&& source, size_t count) {
-                size_t data_size = count_impl<TSource>()(source);
+            auto operator()(TSource&& source, std::size_t count) {
+                std::size_t data_size = count_impl<TSource>()(source);
                 return range_copy<TSource::iterator, TSource>
                     (std::begin(source),
                         data_size < count ? std::end(source) : std::next(std::begin(source), count),
@@ -402,11 +381,11 @@ namespace cppLinq {
             };
         };
 
-        template <typename T, size_t N>
+        template <typename T, std::size_t N>
         struct take_impl<std::array<T, N>>
         {
             using cont_type = typename std::array<T, N>;
-            auto operator()(cont_type&& source, size_t count) {
+            auto operator()(cont_type&& source, std::size_t count) {
                 return range_copy<cont_type::iterator, std::vector<T>>(std::begin(source),
                     N < count ? std::end(source) : std::next(std::begin(source), count),
                     N == 0 || count == 0);
@@ -466,7 +445,7 @@ namespace cppLinq {
             };
         };
 
-        template <typename T, size_t N>
+        template <typename T, std::size_t N>
         struct reverse_impl<std::array<T, N>>
         {
             using cont_type = std::array<T, N>;
@@ -480,14 +459,14 @@ namespace cppLinq {
         template <class TData>
         struct count_impl
         {
-            size_t operator()(const TData& data) const { return data.size(); }
+            std::size_t operator()(const TData& data) const { return data.size(); }
         };
 
         template <typename T, typename TAllocator>
         struct count_impl<std::forward_list<T, TAllocator>>
         {
             using cont_type = typename std::forward_list<T, TAllocator>;
-            size_t operator()(const cont_type& data) const {
+            std::size_t operator()(const cont_type& data) const {
                 return std::distance(std::cbegin(data), std::cend(data));
             }
         };
@@ -498,7 +477,7 @@ namespace cppLinq {
         template <class TData>
         struct last_impl
         {
-            auto operator()(const TData& data, size_t size) const {
+            auto operator()(const TData& data, std::size_t size) const {
                 std::optional<TData::value_type> dest = size > 0 ? *(--std::end(data)) : std::nullopt;
                 return dest;
             }
@@ -508,7 +487,7 @@ namespace cppLinq {
         struct last_impl<std::forward_list<T, TAllocator>>
         {
             using cont_type = typename std::forward_list<T, TAllocator>;
-            auto operator()(const cont_type& data, size_t size) const {
+            auto operator()(const cont_type& data, std::size_t size) const {
                 std::optional<T> dest = size > 0 ? *(std::next(std::begin(data), size - 1)) : std::nullopt;
                 return dest;
             }
@@ -532,7 +511,7 @@ namespace cppLinq {
         template <class TData>
         struct last_or_default_impl
         {
-            auto operator()(const TData& data, size_t size) const {
+            auto operator()(const TData& data, std::size_t size) const {
                 return size > 0 ? *(--std::end(data)) : TData::value_type();
             }
         };
@@ -541,7 +520,7 @@ namespace cppLinq {
         struct last_or_default_impl<std::forward_list<T, TAllocator>>
         {
             using cont_type = typename std::forward_list<T, TAllocator>;
-            auto operator()(const cont_type& data, size_t size) const {
+            auto operator()(const cont_type& data, std::size_t size) const {
                 return size > 0 ? *(std::next(std::begin(data), size - 1)) : T();
             }
         };
@@ -660,7 +639,7 @@ namespace cppLinq {
             return where(std::move(value), predicate);
         }
 
-        auto Where(std::function<bool(const value_type&, size_t)> predicate) {
+        auto Where(std::function<bool(const value_type&, std::size_t)> predicate) {
             auto where = where_index_impl<std::decay_t<decltype(value)>>();
             return where(std::move(value), predicate);
         }
@@ -735,10 +714,10 @@ namespace cppLinq {
         //}
 
         template <typename TResultElement>
-        auto Select(std::function<TResultElement(const value_type&, size_t index)> converter) {
+        auto Select(std::function<TResultElement(const value_type&, std::size_t index)> converter) {
             std::vector<TResultElement> result;
             result.reserve(Count());
-            size_t index = 0;
+            std::size_t index = 0;
             std::for_each(std::begin(value), std::end(value),
                 [&](const auto& elm) {result.emplace_back(converter(elm, index)); index++; });
             return Enumerable<std::vector<TResultElement>>(std::move(result));
@@ -752,7 +731,7 @@ namespace cppLinq {
         //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化します。
         //SelectMany<TSource, TResult>(IEnumerable<TSource>, Func<TSource, Int32, IEnumerable<TResult>>)
         //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化します。 各ソース要素のインデックスは、その要素の射影されたフォームで使用されます。
-        auto Skip(size_t count) {
+        auto Skip(std::size_t count) {
             auto skip = skip_impl<std::decay_t<decltype(value)>>();
             return skip(std::move(value), count);
         }
@@ -764,7 +743,7 @@ namespace cppLinq {
         //SkipWhile<TSource>(IEnumerable<TSource>, Func<TSource, Int32, Boolean>)
         //    指定された条件が満たされる限り、シーケンスの要素をバイパスした後、残りの要素を返します。 要素のインデックスは、述語関数のロジックで使用されます。
 
-        auto Take(size_t count) {
+        auto Take(std::size_t count) {
             auto take = take_impl<std::decay_t<decltype(value)>>();
             return take(std::move(value), count);
         }
@@ -1031,12 +1010,12 @@ namespace cppLinq {
                 [&](const auto& item) {return predicate(elm, item); }) != std::cend(value);
         }
 
-        size_t Count() const {
+        std::size_t Count() const {
             auto count = count_impl<std::decay_t<decltype(value)>>();
             return count(value);
         }
 
-        size_t Count(std::function<bool(const value_type&)> predicate) const {
+        std::size_t Count(std::function<bool(const value_type&)> predicate) const {
             return std::count_if(std::cbegin(value), std::cend(value), predicate);
         }
         //LongCount<TSource>(IEnumerable<TSource>)
@@ -1075,7 +1054,7 @@ namespace cppLinq {
             return last(value, Count());
         }
 
-        auto ElementAt(size_t index) const {
+        auto ElementAt(std::size_t index) const {
             if (Count() == 0 || Count() <= index) return std::nullopt;
             return std::optional<value_type>(*std::next(std::cbegin(value), index));
         }
@@ -1126,7 +1105,7 @@ namespace cppLinq {
             return itr != std::cend(value) ? *itr : value_type();
         }
 
-        auto ElementAtOrDefault(size_t index) const {
+        auto ElementAtOrDefault(std::size_t index) const {
             if (Count() == 0 || Count() <= index) return value_type();
             return *std::next(std::cbegin(value), index);
         }
@@ -1185,41 +1164,41 @@ namespace cppLinq {
     // Entry functions
 #pragma region entry functions
     template <class TContainer>
-    auto From() {
+    inline auto From() {
         return Enumerable<TContainer>();
     }
 
     template <class TContainer>
-    auto From(const TContainer& container) {
+    inline auto From(const TContainer& container) {
         return Enumerable<TContainer>(container);
     }
 
     template <class TContainer>
-    auto From(std::initializer_list<typename TContainer::value_type> initialList) {
+    inline auto From(std::initializer_list<typename TContainer::value_type> initialList) {
         return Enumerable<TContainer>(initialList);
     }
 
-    template <typename T, size_t N>
-    auto From(const T(&array)[N]) {
+    template <typename T, std::size_t N>
+    inline auto From(const T(&array)[N]) {
         Enumerable<std::array<T, N>> result;
         std::copy(std::begin(array), std::end(array), std::begin(result.value));
         return result;
     }
 
     template <typename T>
-    auto From(const T* ary_ptr, size_t size) {
+    inline auto From(const T* ary_ptr, std::size_t size) {
         Enumerable<std::vector<T>> result;
         if (ary_ptr != nullptr && size > 0)
             std::copy(ary_ptr, ary_ptr + size, std::back_inserter(result.value));
         return result;
     }
 
-    auto Enumerable_Range(int start, int end) {
+    inline auto Enumerable_Range(int start, int end) {
         return Enumerable<std::vector<int>>::Range(start, end);
     }
 
     template <typename T>
-    auto Enumerable_Repeat(const T& init, int times) {
+    inline auto Enumerable_Repeat(const T& init, int times) {
         return Enumerable<std::vector<T>>::Repeat(init, times);
     }
 
