@@ -42,7 +42,8 @@
 #include<optional>
 #endif
 
-namespace MacLinq {
+namespace macsignee{
+namespace cppLinq {
 
 #pragma region utilities
     //----------------------------------------
@@ -1223,4 +1224,5 @@ namespace MacLinq {
     }
 
 #pragma endregion  // entry functions
-}// namespace
+}// cppLinq
+}// macsignee
