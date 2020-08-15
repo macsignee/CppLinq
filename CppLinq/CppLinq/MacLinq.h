@@ -708,11 +708,11 @@ namespace macsignee {
 
 #pragma region contructors and so
         private:
-            using value_type = typename TContainer::value_type;
             //const TContainer* pSource = nullptr;
         public:
             //-------------------------------------
             // attributes
+            using value_type = typename TContainer::value_type;
             TContainer value;
 
             //-------------------------------------
@@ -799,6 +799,7 @@ namespace macsignee {
             }
 
             // select
+        private:
             template <class TSource, class TDest, typename TFunction>
             static auto transform_copy(TSource&& source, TFunction&& copyer) {
                 Enumerable<TDest> dest;
@@ -806,7 +807,7 @@ namespace macsignee {
                 std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), std::forward<TFunction>(copyer));
                 return dest;
             };
-
+        public:
             template <typename TConverter>
             auto Select(TConverter converter) {
                 using dest_type = decltype(converter(value_type()));
@@ -860,27 +861,7 @@ namespace macsignee {
             //    指定された条件が満たされる限り、シーケンスから要素を返します。
             //TakeWhile<TSource>(IEnumerable<TSource>, Func<TSource, Int32, Boolean>)
             //    指定された条件が満たされる限り、シーケンスから要素を返します。 要素のインデックスは、述語関数のロジックで使用されます。
-            template <typename TFunction>
-            auto Aggregate(value_type seed, TFunction predicate) const {
-                return std::accumulate(std::begin(value), std::end(value), seed);
-            }
 
-            template <typename TFunction>
-            auto Aggregate(TFunction accumulate) const {
-
-                return std::accumulate(++std::cbegin(value), std::cend(value), *std::cbegin(value));
-            }
-
-            template <typename TFunction, typename TSelector>
-            auto Aggregate(value_type seed, TFunction&& accumulate, TSelector&& selector) const {
-                return selector(std::accumulate(++std::begin(value), std::end(value), *std::begin(value)));
-            }
-            //Aggregate<TSource, TAccumulate, TResult>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>, Func<TAccumulate, TResult>)
-            //    シーケンスにアキュムレータ関数を適用します。 指定したシード値は最初のアキュムレータ値として使用され、指定した関数は結果値の選択に使用されます。
-            //Aggregate<TSource, TAccumulate>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>)
-            //    シーケンスにアキュムレータ関数を適用します。 指定されたシード値が最初のアキュムレータ値として使用されます。
-            //Aggregate<TSource>(IEnumerable<TSource>, Func<TSource, TSource, TSource>)
-            //    シーケンスにアキュムレータ関数を適用します。
             //Append<TSource>(IEnumerable<TSource>, TSource)
             //    シーケンスの末尾に値を追加します。
             //Prepend<TSource>(IEnumerable<TSource>, TSource)
@@ -969,7 +950,6 @@ namespace macsignee {
                 return Union(another.value, predicate);
             }
 
-            // 既定の等値比較子を使用して値を比較することにより、2 つのシーケンスの積集合を生成します。
             template <class TOther>
             auto Intersect(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot intersect ");
@@ -987,7 +967,6 @@ namespace macsignee {
                 return Interesect(another.value, predicate);
             }
 
-            // 既定の等値比較子を使用して値を比較することにより、2 つのシーケンスの差集合を生成します。
             template <class TOther>
             auto Except(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot except ");
@@ -1006,7 +985,6 @@ namespace macsignee {
                 return Except(another.value, predicate);
             }
 
-            // 指定された 2 つのシーケンスの要素を持つタプルのシーケンスを生成します。
             template <class TOther>
             auto Zip(const TOther& another) {
                 auto itr_f = move_itr(std::begin(value));
@@ -1020,7 +998,6 @@ namespace macsignee {
                 return dest;
             }
 
-            // 2 つのシーケンスの対応する要素に対して、1 つの指定した関数を適用し、結果として 1 つのシーケンスを生成します。
             template <class TOther, typename TZipper>
             auto Zip(const TOther& another, TZipper&& zipper) {
                 using dest_type = decltype(zipper(value_type(), typename TOther::value_type()));
@@ -1044,16 +1021,51 @@ namespace macsignee {
                 return Zip(another.value, zipper);
             }
 
-            //    一致するキーに基づいて 2 つのシーケンスの要素を相互に関連付けます。 キーの比較には既定の等値比較子が使用されます。
-            template <class TOther, typename TGetInnerKey, typename TGetOuterKey, typename TJoiner>
-            auto Join(const Enumerable<TOther>& another, TGetInnerKey&& innerKey, TGetOuterKey&& outerKey, TJoiner&& joiner) {
+            template <class TOuter, typename TGetInnerKey, typename TGetOuterKey, typename TJoiner, typename TComparer>
+            auto Join(const TOuter& outer, TGetInnerKey&& getInnerKey, TGetOuterKey&& getOuterKey, TJoiner&& joiner, TComparer&& comparer) {
+                using dest_type = decltype(joiner(value_type(), typename TOuter::value_type()));
+                using key_type = decltype(getInnerKey(value_type()));
+                static_assert(std::is_same_v<key_type, decltype(getOuterKey(typename TOuter::value_type()))>, "key type mismatch");
+
+                Enumerable<std::vector<dest_type>> dest;
+                dest.value.reserve(Count() + count_impl<TOuter>()(outer));
+                std::multimap<key_type, decltype(std::begin(outer))> outerKeys(std::forward<TComparer>(comparer));
+
+                auto itr_o = std::begin(outer);
+                for (; itr_o != std::end(outer); ++itr_o)
+                    outerKeys.insert(std::make_pair(getOuterKey(*itr_o), itr_o));
+
+                for (auto itr_i = std::begin(value); itr_i != std::end(value); ++itr_i) {
+                    auto key_range = outerKeys.equal_range(getInnerKey(*itr_i));
+                    for (auto mapItr = key_range.first; mapItr != key_range.second; ++mapItr) {
+                        dest.value.emplace_back(joiner(*itr_i, *(mapItr->second)));
+                    }
+                }
+                dest.value.shrink_to_fit();
+                return  dest;
             }
-            //auto Join<TOuter, TInner, TKey, TResult>(IEnumerable<TOuter>, IEnumerable<TInner>, Func<TOuter, TKey>, Func<TInner, TKey>, Func<TOuter, TInner, TResult>, IEqualityComparer<TKey>)
-            //    一致するキーに基づいて 2 つのシーケンスの要素を相互に関連付けます。 指定された IEqualityComparer<T> を使用してキーを比較します。
+
+            template <class TOuter, typename TGetInnerKey, typename TGetOuterKey, typename TJoiner>
+            auto Join(const TOuter& outer, TGetInnerKey&& getInnerKey, TGetOuterKey&& getOuterKey, TJoiner&& joiner) {
+                return Join(outer, std::forward<TGetInnerKey>(getInnerKey), std::forward<TGetOuterKey>(getOuterKey),
+                    std::forward<TJoiner>(joiner), std::less<decltype(getInnerKey(value_type()))>());
+            }
+
+            template <class TOuter, typename TGetInnerKey, typename TGetOuterKey, typename TJoiner, typename TComparer>
+            auto Join(const Enumerable<TOuter>& outer, TGetInnerKey&& getInnerKey, TGetOuterKey&& getOuterKey, TJoiner&& joiner, TComparer&& comparer) {
+                return Join(outer.value, std::forward<TGetInnerKey>(getInnerKey), std::forward<TGetOuterKey>(getOuterKey),
+                    std::forward<TJoiner>(joiner), std::forward<TComparer>(comparer));
+            }
+
+            template <class TOuter, typename TGetInnerKey, typename TGetOuterKey, typename TJoiner>
+            auto Join(const Enumerable<TOuter>& outer, TGetInnerKey&& getInnerKey, TGetOuterKey&& getOuterKey, TJoiner&& joiner) {
+                return Join(outer.value, std::forward<TGetInnerKey>(getInnerKey), std::forward<TGetOuterKey>(getOuterKey),
+                    std::forward<TJoiner>(joiner));
+            }
 
 #pragma region STL Algorithm Implementations
 #if FALSE
-        // STL algorithm implementation all method need sort previously
+            // STL algorithm implementation all method need sort previously
             auto SortedDistinct(std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 Enumerable<TContainer> result;
                 std::unique_copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_fw(result.value), predicate);
@@ -1233,6 +1245,27 @@ namespace macsignee {
                 if (Count() == 0 || Count() <= index) return value_type();
                 return *std::next(std::cbegin(value), index);
             }
+            template <typename TFunction>
+            auto Aggregate(value_type seed, TFunction predicate) const {
+                return std::accumulate(std::begin(value), std::end(value), seed);
+            }
+
+            template <typename TFunction>
+            auto Aggregate(TFunction accumulate) const {
+
+                return std::accumulate(++std::cbegin(value), std::cend(value), *std::cbegin(value));
+            }
+
+            template <typename TFunction, typename TSelector>
+            auto Aggregate(value_type seed, TFunction&& accumulate, TSelector&& selector) const {
+                return selector(std::accumulate(++std::begin(value), std::end(value), *std::begin(value)));
+            }
+            //Aggregate<TSource, TAccumulate, TResult>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>, Func<TAccumulate, TResult>)
+            //    シーケンスにアキュムレータ関数を適用します。 指定したシード値は最初のアキュムレータ値として使用され、指定した関数は結果値の選択に使用されます。
+            //Aggregate<TSource, TAccumulate>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>)
+            //    シーケンスにアキュムレータ関数を適用します。 指定されたシード値が最初のアキュムレータ値として使用されます。
+            //Aggregate<TSource>(IEnumerable<TSource>, Func<TSource, TSource, TSource>)
+            //    シーケンスにアキュムレータ関数を適用します。
 #if FALSE
             auto DefaultIfEmpty() {
                 if (Count() == 0) {
@@ -1321,7 +1354,7 @@ namespace macsignee {
 #pragma endregion
 
 #pragma region MFC CArray implementation
-//#ifdef _MSC_VER >= 1600
+#if _MSC_VER >= 1600
 #ifdef _AFX
         template<typename T, typename TArg>
         const T* cbegin(const CArray<T, TArg>& carray) {
@@ -1343,7 +1376,7 @@ namespace macsignee {
             return result;
         }
 #endif
-//#endif
+#endif
 #pragma endregion 
 
         inline auto Enumerable_Range(int start, int end) {
