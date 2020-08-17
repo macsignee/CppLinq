@@ -349,6 +349,16 @@ namespace macsignee {
             };
 
             //-------------------
+            // select
+            template <class TSource, class TDest, typename TFunction>
+            static auto transform_copy(TSource&& source, TFunction&& copyer) {
+                Enumerable<TDest> dest;
+                dest.value.reserve(count_impl<TSource>()(source));
+                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), std::forward<TFunction>(copyer));
+                return dest;
+            };
+
+            //-------------------
             // skip
             template <typename TSrcItr, class TDest>
             static auto range_copy(TSrcItr itrBegin, TSrcItr itrEnd) {
@@ -574,7 +584,6 @@ namespace macsignee {
                 using cont_type = typename std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>;
                 using val_type = typename cont_type::value_type;
                 auto operator()(cont_type&& source, std::function<bool(const val_t<val_type>&, const val_t<val_type>&)> predicate) {
-                    return Enumerable<cont_type>(std::forward<std::unordered_multimap<TKey, TValue, THash, TComperer, TAllocator>>(source));
                     Enumerable<cont_type> dest;
                     copy_distinct_s(cont_type > (source), dest.value, predicate);
                     return dest;
@@ -787,6 +796,8 @@ namespace macsignee {
             // iterators
             auto begin() { return std::begin(value); }
             auto end() { return std::end(value); }
+            auto cbegin() { return std::cbegin(value); }
+            auto cend() { return std::cend(value); }
 
 #pragma endregion
             //-------------------------------------
@@ -849,15 +860,6 @@ namespace macsignee {
             }
 
             // select
-        private:
-            template <class TSource, class TDest, typename TFunction>
-            static auto transform_copy(TSource&& source, TFunction&& copyer) {
-                Enumerable<TDest> dest;
-                dest.value.reserve(count_impl<TSource>()(source));
-                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), std::forward<TFunction>(copyer));
-                return dest;
-            };
-        public:
             template <typename TConverter>
             auto Select(TConverter converter) {
                 using dest_type = decltype(converter(value_type()));
@@ -897,7 +899,6 @@ namespace macsignee {
 
             auto SkipWhile(std::function<bool(value_type)> predicate) {
                 Enumerable<TContainer> result;
-                // itr !!
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (!predicate(elm)) result.value.emplace_back(elm);
                     });
@@ -907,7 +908,6 @@ namespace macsignee {
             auto SkipWhile(std::function<bool(value_type, size_t)> predicate) {
                 Enumerable<TContainer> result;
                 size_t index = 0;
-                // itr !!
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (!predicate(elm, index)) result.value.emplace_back(elm);
                     ++index;
@@ -925,7 +925,6 @@ namespace macsignee {
 
             auto TakeWhile(std::function<bool(value_type)> predicate) {
                 Enumerable<TContainer> result;
-                // itr !!
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (predicate(elm))
                         result.value.emplace_back(elm);
@@ -936,7 +935,6 @@ namespace macsignee {
             auto TakeWhile(std::function<bool(value_type, size_t)> predicate) {
                 Enumerable<TContainer> result;
                 size_t index = 0;
-                // itr !!
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (predicate(elm, index)) result.value.emplace_back(elm);
                     ++index;
@@ -1066,11 +1064,11 @@ namespace macsignee {
             template <class TOther>
             auto Zip(const TOther& another) {
                 auto itr_f = move_itr(std::begin(value));
-                auto itr_s = std::begin(another);
+                auto itr_s = std::cbegin(another);
                 using tup_type = std::tuple<val_t<value_type>, val_<typename TOther::value_type>::type>;
                 Enumerable<std::vector<tup_type>> dest;
                 dest.value.reserve(Count() < count_impl<TOther>()(another) ? Count() : count_impl<TOther>()(another));
-                for (; itr_f != move_itr(std::end(value)) && itr_s != std::end(another); ++itr_f, ++itr_s) {
+                for (; itr_f != move_itr(std::end(value)) && itr_s != std::cend(another); ++itr_f, ++itr_s) {
                     dest.value.emplace_back(std::make_tuple(*itr_f, *itr_s));
                 }
                 return dest;
@@ -1107,10 +1105,10 @@ namespace macsignee {
 
                 Enumerable<std::vector<dest_type>> dest;
                 dest.value.reserve(Count() + count_impl<TOuter>()(outer));
-                std::multimap<key_type, decltype(std::begin(outer))> outerKeys(std::forward<TComparer>(comparer));
+                std::multimap<key_type, decltype(std::cbegin(outer))> outerKeys(std::forward<TComparer>(comparer));
 
-                auto itr_o = std::begin(outer);
-                for (; itr_o != std::end(outer); ++itr_o)
+                auto itr_o = std::cbegin(outer);
+                for (; itr_o != std::cend(outer); ++itr_o)
                     outerKeys.insert(std::make_pair(getOuterKey(*itr_o), itr_o));
 
                 for (auto itr_i = std::begin(value); itr_i != std::end(value); ++itr_i) {
@@ -1146,8 +1144,7 @@ namespace macsignee {
             //GroupJoin<TOuter, TInner, TKey, TResult>(IEnumerable<TOuter>, IEnumerable<TInner>, Func<TOuter, TKey>, Func<TInner, TKey>, Func<TOuter, IEnumerable<TInner>, TResult>, IEqualityComparer<TKey>)
             //    キーが等しいかどうかに基づいて 2 つのシーケンスの要素を相互に関連付け、その結果をグループ化します。 指定された IEqualityComparer<T> を使用してキーを比較します。
 
-
-#pragma region STL Algorithm Implementations
+#pragma region STL Algorithm Implementations -- NOT IN USE --
 #if FALSE
         // STL algorithm implementation all method need sort previously
             auto SortedDistinct(std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
@@ -1330,27 +1327,27 @@ namespace macsignee {
                 if (Count() == 0 || Count() <= index) return value_type();
                 return *std::next(std::cbegin(value), index);
             }
-            template <typename TFunction>
-            auto Aggregate(value_type seed, TFunction predicate) const {
-                return std::accumulate(std::begin(value), std::end(value), seed);
+
+            value_type Aggregate(std::function<value_type(const value_type&, const value_type&)> accumulator) const {
+                return std::accumulate(std::cbegin(value), std::cend(value), value_type(), accumulator);
             }
 
-            template <typename TFunction>
-            auto Aggregate(TFunction accumulate) const {
-
-                return std::accumulate(++std::cbegin(value), std::cend(value), *std::cbegin(value));
+            template <typename TAccumulate>
+            TAccumulate Aggregate(TAccumulate seed, std::function<TAccumulate(const TAccumulate&, const value_type&)> accumulater) const {
+                TAccumulate result = seed;
+                for (auto itr = std::cbegin(value); itr != std::cend(value); ++itr)
+                    result = accumulater(result, *itr);
+                return result;
             }
 
-            template <typename TFunction, typename TSelector>
-            auto Aggregate(value_type seed, TFunction&& accumulate, TSelector&& selector) const {
-                return selector(std::accumulate(++std::begin(value), std::end(value), *std::begin(value)));
+            template <typename TAccumulate, typename TSelector>
+            auto Aggregate(TAccumulate seed, std::function<TAccumulate(value_type, TAccumulate)> accumulater, TSelector&& selector) const {
+                TAccumulate result = seed;
+                for (auto itr = std::cbegin(value); itr != std::cend(value); ++itr)
+                    result = accumulater(result, *itr);
+                return selector(result);
             }
-            //Aggregate<TSource, TAccumulate, TResult>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>, Func<TAccumulate, TResult>)
-            //    シーケンスにアキュムレータ関数を適用します。 指定したシード値は最初のアキュムレータ値として使用され、指定した関数は結果値の選択に使用されます。
-            //Aggregate<TSource, TAccumulate>(IEnumerable<TSource>, TAccumulate, Func<TAccumulate, TSource, TAccumulate>)
-            //    シーケンスにアキュムレータ関数を適用します。 指定されたシード値が最初のアキュムレータ値として使用されます。
-            //Aggregate<TSource>(IEnumerable<TSource>, Func<TSource, TSource, TSource>)
-            //    シーケンスにアキュムレータ関数を適用します。
+
 #if FALSE
             auto DefaultIfEmpty() {
                 if (Count() == 0) {
@@ -1380,7 +1377,7 @@ namespace macsignee {
             }
 
             auto Average() const {
-                return Count() > 0 ? static_cast<value_type>(Sum()) / Count() : value_type();
+                return Count() > 0 ? static_cast<value_type>(Sum()) / static_cast<value_type>(Count()) : value_type();
             }
 
             //---------------------------------
