@@ -99,9 +99,9 @@ namespace macsignee {
 
             template <class TSource, typename T>
             static auto copy_filtered_sp(TSource&& source, std::function<bool(const T&)>&& predicate) {
-                Enumerable<std::vector<T>> dest;
-                dest.value.reserve(count_impl<TSource>()(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(count_impl<TSource>()(source));
                 auto last = std::copy_if(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), predicate);
+
                 return dest;
             }
 
@@ -195,13 +195,11 @@ namespace macsignee {
 
             template <class TSource, typename T>
             static auto filter_copy_toV_index(TSource&& source, std::size_t size, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
-                Enumerable<std::vector<T, std::allocator<T>>> dest;
-                dest.value.reserve(size);
+                auto dest = Enumerable::CreateVectorEnumerable<T>(size);
                 std::size_t index = 0;
                 auto itr_ss = move_itr(std::begin(source));
-                const auto itr_se = move_itr(std::end(source));
                 auto itr_d = inserter_bk(dest.value);
-                for (; itr_ss != itr_se; ++itr_ss) {
+                for (; itr_ss != move_itr(std::end(source)); ++itr_ss) {
                     if (predicate(*itr_ss, index)) {
                         *itr_d = *itr_ss;
                         ++itr_d;
@@ -251,8 +249,7 @@ namespace macsignee {
             // sort_by
             template <class TSource, typename T>
             static auto copy_sort_to_v(TSource&& source, std::function<bool(const T&, const T&)> sorter) {
-                Enumerable<std::vector<T>> dest;
-                dest.value.reserve(std::size(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(std::size(source));
                 std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
                 sort_n(dest.value, sorter);
                 return dest;
@@ -410,8 +407,7 @@ namespace macsignee {
 
             template <class TData, typename T>
             static auto copy_reverse_to_v(TData&& source) {
-                Enumerable<std::vector<T>> dest;
-                dest.value.reserve(count_impl<TData>()(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(count_impl<TData>()(source));
                 std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
                 std::reverse(dest.value.begin(), dest.value.end());
                 return dest;
@@ -524,8 +520,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::array<T, N>;
                 auto operator()(std::array<T, N>&& source, std::function<bool(const T&, const T&)> predicate) {
-                    Enumerable<std::vector<T>> dest;
-                    dest.value.reserve(N);
+                    auto dest = Enumerable::CreateVectorEnumerable<T>(N);
                     copy_distinct(std::forward<std::array<T, N>>(source), dest.value, predicate);
                     return dest;
                 }
@@ -714,7 +709,14 @@ namespace macsignee {
             //-------------------------------------
             // attributes
             TContainer value;
-
+        private:
+            template <class T, class TOrigin>
+            static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
+                Enumerable<std::vector<T>> result;
+                if (reserve > 0) result.value.reserve(reserve);
+                return result;
+            }
+        public:
             //-------------------------------------
             // ctor / dtor
             Enumerable() = default;
@@ -822,12 +824,11 @@ namespace macsignee {
 
             template <typename TResultElement>
             auto Select(std::function<TResultElement(const value_type&, std::size_t index)> converter) {
-                std::vector<TResultElement> result;
-                result.reserve(Count());
+                auto result = Enumerable::CreateVectorEnumerabl<TResultElement>(Count());
                 std::size_t index = 0;
                 std::for_each(std::begin(value), std::end(value),
-                    [&](const auto& elm) {result.emplace_back(converter(elm, index)); index++; });
-                return Enumerable<std::vector<TResultElement>>(std::move(result));
+                    [&](const auto& elm) {result.value.emplace_back(converter(elm, index)); index++; });
+                return result;
             }
 
             //SelectMany<TSource, TCollection, TResult>(IEnumerable<TSource>, Func<TSource, IEnumerable<TCollection>>, Func<TSource, TCollection, TResult>)
@@ -937,8 +938,7 @@ namespace macsignee {
             template <class TOther>
             auto Concat(const TOther& another) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot concatinate ");
-                Enumerable<std::vector<val_t<value_type>>> result;
-                result.value.reserve(Count() + count_impl<TOther>()(another));
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_impl<TOther>()(another));
                 std::copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_bk(result.value));
                 std::copy(move_itr(std::begin(another)), move_itr(std::end(another)), inserter_bk(result.value));
 
@@ -954,9 +954,8 @@ namespace macsignee {
             auto Union(const TOther& another,
                 std::function<bool(const value_type&, const value_type&)> predicate = std::less<val_t<value_type>>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot union ");
-                Enumerable<std::vector<val_t<value_type>>> result;
-                result.value.reserve(Count() + count_impl<TOther>()(another));
-                std::set<value_type, decltype(predicate)> temp(predicate);
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_impl<TOther>()(another));
+                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
                 for (auto elm : another)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
 
@@ -973,9 +972,8 @@ namespace macsignee {
             template <class TOther>
             auto Intersect(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot intersect ");
-                Enumerable<std::vector<val_t<value_type>>> result;
-                result.value.reserve(Count() + count_impl<TOther>()(another));
-                std::set<value_type, decltype(predicate)> temp(predicate);
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_impl<TOther>()(another));
+                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value) if (temp.find(elm) == temp.end()) { temp.insert(elm); }
                 for (auto elm : another) if (temp.find(elm) != temp.end()) { result.value.emplace_back(elm); temp.erase(elm); }
                 result.value.shrink_to_fit();
@@ -991,9 +989,8 @@ namespace macsignee {
             template <class TOther>
             auto Except(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot except ");
-                Enumerable<std::vector<val_t<value_type>>> result;
-                result.value.reserve(Count() + count_impl<TOther>()(another));
-                std::set<value_type, decltype(predicate)> temp(predicate);
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_impl<TOther>()(another));
+                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : another) temp.insert(elm);
                 for (auto elm : value)
                     if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
@@ -1012,8 +1009,7 @@ namespace macsignee {
                 auto itr_f = move_itr(std::begin(value));
                 auto itr_s = std::begin(another);
                 using tup_type = std::tuple<val_t<value_type>, val_<typename TOther::value_type>::type>;
-                Enumerable<std::vector<tup_type>> dest;
-                dest.value.reserve(Count() < count_impl<TOther>()(another) ? Count() : count_impl<TOther>()(another));
+                auto dest = Enumerable::CreateVectorEnumerable<tup_type>(Count() < count_impl<TOther>()(another) ? Count() : count_impl<TOther>()(another));
                 for (; itr_f != move_itr(std::end(value)) && itr_s != std::end(another); ++itr_f, ++itr_s) {
                     dest.value.emplace_back(std::make_tuple(*itr_f, *itr_s));
                 }
@@ -1026,11 +1022,11 @@ namespace macsignee {
                 using dest_type = decltype(zipper(value_type(), typename TOther::value_type()));
                 auto itr_f = move_itr(std::begin(value));
                 auto itr_s = std::begin(another);
-                Enumerable<std::vector<dest_type>> dest;
-                dest.value.reserve(Count() < count_impl<TOther>()(another) ? Count() : count_impl<TOther>()(another));
+                auto dest = Enumerable::CreateVectorEnumerable<dest_type>(Count() < count_impl<TOther>()(another) ? Count() : count_impl<TOther>()(another));
                 for (; itr_f != move_itr(std::end(value)) && itr_s != std::end(another); ++itr_f, ++itr_s) {
                     dest.value.emplace_back(zipper(*itr_f, *itr_s));
                 }
+
                 return  dest;
             }
 
