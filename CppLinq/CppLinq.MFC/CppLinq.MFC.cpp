@@ -49,11 +49,11 @@ BOOL CppLinqApp::InitInstance()
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
 
 
-	//CArray<int, int> ary;
-	//for (size_t idx = 0; idx < 10; idx++) {
-	//	ary.Add(idx);
-	//}
-	//auto a = From(ary);
+	CArray<int, int> ary;
+	for (size_t idx = 0; idx < 10; idx++) {
+		ary.Add(idx);
+	}
+	auto a = From(ary);
 
 	// 標準初期化
 	// これらの機能を使わずに最終的な実行可能ファイルの
