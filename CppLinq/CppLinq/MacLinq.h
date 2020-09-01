@@ -29,6 +29,12 @@ namespace macsignee {
 #pragma region utilities
         //----------------------------------------
         // utilities
+        template <class, class = void>
+        struct has_value_type : std::false_type {};
+
+        template <class T>
+        struct has_value_type<T, std::void_t<typename T::value_type>> : std::true_type {};
+
         template <class TData>
         inline auto inserter_bk(TData& data) { return  std::back_inserter(data); };
 
@@ -99,7 +105,7 @@ namespace macsignee {
 
             template <class TSource, typename T>
             static auto copy_filtered_sp(TSource&& source, std::function<bool(const T&)>&& predicate) {
-                auto dest = Enumerable::CreateVectorEnumerablee<T>(count_(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(count_(source));
                 auto last = std::copy_if(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), predicate);
 
                 return dest;
@@ -137,7 +143,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::list<T, TAllocator>;
                 auto operator()(cont_type&& source, std::function<bool(const T&)> predicate) {
-                    return copy_filtered_bk<cont_type, T>(std::forward<cont_type>(source), std::forward< std::function<bool(const T&)> >(predicate));
+                    return copy_filtered_bk<cont_type, T>(std::forward<cont_type>(source), std::forward<std::function<bool(const T&)>>(predicate));
 
                 }
             };
@@ -195,7 +201,7 @@ namespace macsignee {
 
             template <class TSource, typename T>
             static auto filter_copy_toV_index(TSource&& source, std::size_t size, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
-                auto dest = Enumerable::CreateVectorEnumerablee<T>(size);
+                auto dest = Enumerable::CreateVectorEnumerable<T>(size);
                 std::size_t index = 0;
                 auto itr_ss = move_itr(std::begin(source));
                 auto itr_d = inserter_bk(dest.value);
@@ -249,7 +255,7 @@ namespace macsignee {
             // sort_by
             template <class TSource, typename T>
             static auto copy_sort_to_v(TSource&& source, std::function<bool(const T&, const T&)> sorter) {
-                auto dest = Enumerable::CreateVectorEnumerablee<T>(std::size(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(std::size(source));
                 std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
                 sort_n(dest.value, sorter);
                 return dest;
@@ -417,7 +423,7 @@ namespace macsignee {
 
             template <class TData, typename T>
             static auto copy_reverse_to_v(TData&& source) {
-                auto dest = Enumerable::CreateVectorEnumerablee<T>(count_(source));
+                auto dest = Enumerable::CreateVectorEnumerable<T>(count_(source));
                 std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
                 std::reverse(dest.value.begin(), dest.value.end());
                 return dest;
@@ -537,7 +543,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::array<T, N>;
                 auto operator()(std::array<T, N>&& source, std::function<bool(const T&, const T&)> predicate) {
-                    auto dest = Enumerable::CreateVectorEnumerablee<T>(N);
+                    auto dest = Enumerable::CreateVectorEnumerable<T>(N);
                     copy_distinct(std::forward<std::array<T, N>>(source), dest.value, predicate);
                     return dest;
                 }
@@ -580,7 +586,7 @@ namespace macsignee {
                 using val_type = typename cont_type::value_type;
                 auto operator()(cont_type&& source, std::function<bool(const val_t<val_type>&, const val_t<val_type>&)> predicate) {
                     Enumerable<cont_type> dest;
-                    copy_distinct_s(cont_type > (source), dest.value, predicate);
+                    copy_distinct_s(std::forward<cont_type>(source), dest.value, predicate);
                     return dest;
                 }
             };
@@ -671,14 +677,14 @@ namespace macsignee {
                 for (auto itr = std::cbegin(data); itr != std::cend(data); itr++) {
                     if (predicate(*itr)) find_itr = itr;
                 }
-                return find_itr != std::cend(data) ? *find_itr : typename TData::value_type();
+                return find_itr != std::cend(data) ? *find_itr : TData::value_type();
             }
 
             template <class TData>
             struct last_or_default_impl
             {
                 auto operator()(const TData& data, std::size_t size) const {
-                    return size > 0 ? *(--std::end(data)) : std::declval<TData::value_type>();
+                    return size > 0 ? *(--std::end(data)) : TData::value_type();
                 }
             };
 
@@ -687,7 +693,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::forward_list<T, TAllocator>;
                 auto operator()(const cont_type& data, std::size_t size) const {
-                    return size > 0 ? *(std::next(std::begin(data), size - 1)) : std::declval<T>();
+                    return size > 0 ? *(std::next(std::begin(data), size - 1)) : T();
                 }
             };
 
@@ -775,7 +781,7 @@ namespace macsignee {
             TContainer value;
         private:
             template <class T, class TOrigin>
-            static Enumerable<std::vector<T>> CreateVectorEnumerablee(size_t reserve = 0) {
+            static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
                 Enumerable<std::vector<T>> result;
                 if (reserve > 0) result.value.reserve(reserve);
                 return result;
@@ -1001,7 +1007,7 @@ namespace macsignee {
             template <class TOther>
             auto Concat(const TOther& another) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot concatinate ");
-                auto result = Enumerable::CreateVectorEnumerablee<val_t<value_type>>(Count() + count_(another));
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
                 std::copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_bk(result.value));
                 std::copy(move_itr(std::begin(another)), move_itr(std::end(another)), inserter_bk(result.value));
 
@@ -1017,7 +1023,7 @@ namespace macsignee {
             auto Union(const TOther& another,
                 std::function<bool(const value_type&, const value_type&)> predicate = std::less<val_t<value_type>>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot union ");
-                auto result = Enumerable::CreateVectorEnumerablee<val_t<value_type>>(Count() + count_(another));
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
                 std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
                 for (auto elm : another)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
@@ -1033,7 +1039,7 @@ namespace macsignee {
             template <class TOther>
             auto Intersect(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot intersect ");
-                auto result = Enumerable::CreateVectorEnumerablee<val_t<value_type>>(Count() + count_(another));
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
                 std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value) if (temp.find(elm) == temp.end()) { temp.insert(elm); }
                 for (auto elm : another) if (temp.find(elm) != temp.end()) { result.value.emplace_back(elm); temp.erase(elm); }
@@ -1049,7 +1055,7 @@ namespace macsignee {
             template <class TOther>
             auto Except(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot except ");
-                auto result = Enumerable::CreateVectorEnumerablee<val_t<value_type>>(Count() + count_(another));
+                auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
                 std::unordered_set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : another) temp.insert(elm);
                 for (auto elm : value)
@@ -1081,7 +1087,7 @@ namespace macsignee {
                 using dest_type = decltype(zipper(value_type(), typename TOther::value_type()));
                 auto itr_f = move_itr(std::begin(value));
                 auto itr_s = std::begin(another);
-                auto dest = Enumerable::CreateVectorEnumerablee<dest_type>(Count() < count_(another) ? Count() : count_(another));
+                auto dest = Enumerable::CreateVectorEnumerable<dest_type>(Count() < count_(another) ? Count() : count_(another));
                 for (; itr_f != move_itr(std::end(value)) && itr_s != std::end(another); ++itr_f, ++itr_s) {
                     dest.value.emplace_back(zipper(*itr_f, *itr_s));
                 }
@@ -1180,27 +1186,42 @@ namespace macsignee {
 #endif
 #pragma endregion 
 
-            auto ToVector() {
+            auto ToVector() && {
                 auto to_vector = to_vector_impl<std::decay_t<decltype(value)>>();
                 return to_vector(std::move(value));
             }
 
-            auto ToList() {
+            auto ToList() && {
                 auto to_list = to_list_impl<std::decay_t<decltype(value)>>();
                 return to_list(std::move(value));
             }
-            // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
-            //    指定されたキー セレクター関数および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+
+            template <typename TGetKey, typename TGetValue>
+            auto ToDictionary(TGetKey&& getKey, TGetValue&& getValue) && {
+                using key_type = decltype(getKey(std::declval<value_type>()));
+                using val_type = decltype(getValue(std::declval<value_type>()));
+                std::unordered_map<key_type, val_type> result(count_(value));
+                for (auto elm : value) {
+                    result.emplace(getKey(elm), getValue(elm));
+                }
+                result.size_to_fit
+                return result;
+            }
+ 
             // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
             //    指定されたキー セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数およびキーの比較子に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
-            // ToHashSet<TSource>(IEnumerable<TSource>)
-            //    IEnumerable<T> から HashSet<T> を作成します。
+
+            auto ToHashSet() {
+                return std::unordered_set<value_type>(move_itr(std::begin(value)), move_itr(std::end(value)));
+
+            }
             // ToHashSet<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
             //    comparer を使用して IEnumerable<T>から HashSet<T> を作成し、キーを比較します。
+
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
             //    指定されたキー セレクター関数および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
@@ -1210,6 +1231,13 @@ namespace macsignee {
             // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数およびキーの比較子に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
 
+            template <typename TChar>
+            auto ToString(std::function<const std::basic_string<TChar>(const value_type&)> converter) {
+                std::basic_string<TChar> result;
+                for(auto val : value)
+                    result.append(converter(val));
+                return result;
+            }
 
             //-------------------------------------
             // Linq like functions constant
@@ -1252,10 +1280,15 @@ namespace macsignee {
                 return std::all_of(std::cbegin(value), std::cend(value), predicate);
             }
 
-            //SequenceEqual<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            //要素の型に対して既定の等値比較子を使用して要素を比較することで、2 つのシーケンスが等しいかどうかを判断します。
-            //SequenceEqual<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
-            //指定された IEqualityComparer<T> を使用して要素を比較することで、2 つのシーケンスが等しいかどうかを判断します。
+            template<class TOther>
+            bool SequenceEqual(const TOther& another) {
+
+            }
+
+            template<class TOther>
+            bool SequenceEqual(const TOther& another, std::function<bool(value_type, typename TOther::value_type)> comparer) {
+
+            }
 
 #if __cplusplus > 201402L
             auto First() const {
@@ -1421,6 +1454,14 @@ namespace macsignee {
         template <class TContainer>
         inline auto From(std::initializer_list<typename TContainer::value_type> initialList) {
             return Enumerable<TContainer>(initialList);
+        }
+
+        template <typename TChar>
+        inline auto From(const std::basic_string<TChar>& string) {
+            Enumerable<std::vector<TChar>> result;
+            result.value.reserve(string.length());
+            std::copy(std::cbegin(string), std::cend(string), std::begin(result.value));
+            return result;
         }
 
 #pragma region C-style array implementation
