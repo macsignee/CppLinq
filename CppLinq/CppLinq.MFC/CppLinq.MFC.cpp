@@ -48,7 +48,7 @@ BOOL CppLinqApp::InitInstance()
 	// MFC コントロールでテーマを有効にするために、"Windows ネイティブ" のビジュアル マネージャーをアクティブ化
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
 
-	CArray<int, int> ary;
+	CArray<size_t, size_t> ary;
 	for (size_t idx = 0; idx < 10; idx++) {
 		ary.Add(idx);
 	}

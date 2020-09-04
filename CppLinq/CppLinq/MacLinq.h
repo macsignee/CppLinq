@@ -68,20 +68,6 @@ namespace macsignee {
             using type = std::pair<TKey, TValue>;
         };
 
-        template <class T>
-        static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
-            Enumerable<std::vector<T>> result;
-            if (reserve > 0) result.value.reserve(reserve);
-            return result;
-        }
-
-        template <class T, class TSource>
-        static Enumerable<std::vector<T>> CreateVectorEnumerable(TSource&& source) {
-            Enumerable<std::vector<T>> result;
-            result.value.Reserve(count_(source));
-            std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(result.value));
-            return result;
-        }
 
         template <typename T>
         using val_t = typename val_<T>::type;
@@ -411,7 +397,7 @@ namespace macsignee {
             struct take_impl
             {
                 auto operator()(TSource&& source, std::size_t count) {
-                    if (data_size == 0 || count == 0) return Enumerable<TSource>();
+                    if (count_(TSource) == 0 || count == 0) return Enumerable<TSource>();
                     return range_copy<TSource::iterator, TSource>(std::begin(source), count_(source) < count ? std::end(source) : std::next(std::begin(source), count));
                 };
             };
@@ -541,7 +527,8 @@ namespace macsignee {
                 auto operator()(std::forward_list<T, TAllocator>&& source, std::function<bool(const T&, const T&)> predicate) {
                     Enumerable<std::forward_list<T, TAllocator>> dest(std::forward<std::forward_list<T, TAllocator>>(source));
                     std::set<T, decltype(predicate)> temp(predicate);
-                    auto prev = litr = std::begin(dest.value);;
+                    auto prev = std::begin(dest.value);
+                    auto litr = prev;
                     for (; litr != std::end(dest.value); ) {
                         if (temp.find(*litr) == temp.end()) { temp.insert(*litr); prev = litr; ++litr; }
                         else
@@ -1209,7 +1196,7 @@ namespace macsignee {
                 for (auto elm : value) {
                     result.emplace(getKey(elm), getValue(elm));
                 }
-                result.size_to_fit
+                result.size_to_fit();
                 return result;
             }
  
@@ -1440,6 +1427,21 @@ namespace macsignee {
                 if (times == 0) return Enumerable<std::vector<T>>();
                 std::vector<T> vec(times, init);
                 return Enumerable<std::vector<T>>(std::move(vec));
+            }
+        private:
+            template <typename T>
+            static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
+                Enumerable<std::vector<T>> result;
+                if (reserve > 0) result.value.reserve(reserve);
+                return result;
+            }
+
+            template <class T, class TSource>
+            static Enumerable<std::vector<T>> CreateVectorEnumerable(TSource&& source) {
+                Enumerable<std::vector<T>> result;
+                result.value.Reserve(count_(source));
+                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(result.value));
+                return result;
             }
         };
 
