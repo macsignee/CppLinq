@@ -19,7 +19,8 @@
 #include <type_traits>
 #include <tuple>
 #include <initializer_list>
-#if __cplusplus > 201402L
+#include <string>
+#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L) && (_MSC_VER >= 1913))
 #include<optional>
 #endif
 
@@ -39,7 +40,7 @@ namespace macsignee {
         inline auto inserter_bk(TData& data) { return  std::back_inserter(data); };
 
         template <class TData>
-        inline auto inserter_fw(TData& data) { return std::inserter(data, std::begin(data)); };
+        inline auto inserter_n(TData& data) { return std::inserter(data, std::begin(data)); };
 
         template<typename TItr>
         inline auto move_itr(TItr itr) { return std::make_move_iterator(itr); }
@@ -66,6 +67,22 @@ namespace macsignee {
         {
             using type = std::pair<TKey, TValue>;
         };
+
+        template <class T>
+        static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
+            Enumerable<std::vector<T>> result;
+            if (reserve > 0) result.value.reserve(reserve);
+            return result;
+        }
+
+        template <class T, class TSource>
+        static Enumerable<std::vector<T>> CreateVectorEnumerable(TSource&& source) {
+            Enumerable<std::vector<T>> result;
+            result.value.Reserve(count_(source));
+            std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(result.value));
+            return result;
+        }
+
         template <typename T>
         using val_t = typename val_<T>::type;
 #pragma endregion utilities
@@ -255,8 +272,7 @@ namespace macsignee {
             // sort_by
             template <class TSource, typename T>
             static auto copy_sort_to_v(TSource&& source, std::function<bool(const T&, const T&)> sorter) {
-                auto dest = Enumerable::CreateVectorEnumerable<T>(std::size(source));
-                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
+                auto dest = Enumerable::CreateVectorEnumerable<T, TSource>(std::forward<TSource>(source));
                 sort_n(dest.value, sorter);
                 return dest;
             }
@@ -320,9 +336,8 @@ namespace macsignee {
             {
                 using cont_type = typename std::deque<T, TAllocator>;
                 auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
-                    auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_n(dest.value, compare_key);
+                    sort_n(dest.value, [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); });
                     return dest;
                 }
             };
@@ -334,7 +349,7 @@ namespace macsignee {
                 auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
                     auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_l(dest.value, comparer);
+                    sort_l(dest.value, compare_key);
                     return dest;
                 }
             };
@@ -346,7 +361,7 @@ namespace macsignee {
                 auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
                     auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_l(dest.value, comparer);
+                    sort_l(dest.value, compare_key);
                     return dest;
                 }
             };
@@ -396,9 +411,8 @@ namespace macsignee {
             struct take_impl
             {
                 auto operator()(TSource&& source, std::size_t count) {
-                    std::size_t data_size = count_(source);
                     if (data_size == 0 || count == 0) return Enumerable<TSource>();
-                    return range_copy<TSource::iterator, TSource>(std::begin(source), data_size < count ? std::end(source) : std::next(std::begin(source), count));
+                    return range_copy<TSource::iterator, TSource>(std::begin(source), count_(source) < count ? std::end(source) : std::next(std::begin(source), count));
                 };
             };
 
@@ -527,8 +541,7 @@ namespace macsignee {
                 auto operator()(std::forward_list<T, TAllocator>&& source, std::function<bool(const T&, const T&)> predicate) {
                     Enumerable<std::forward_list<T, TAllocator>> dest(std::forward<std::forward_list<T, TAllocator>>(source));
                     std::set<T, decltype(predicate)> temp(predicate);
-                    auto litr = std::begin(dest.value);
-                    auto prev = litr;
+                    auto prev = litr = std::begin(dest.value);;
                     for (; litr != std::end(dest.value); ) {
                         if (temp.find(*litr) == temp.end()) { temp.insert(*litr); prev = litr; ++litr; }
                         else
@@ -645,7 +658,7 @@ namespace macsignee {
 
             //-------------------
             // last / last_or_default
-#if __cplusplus > 201402L
+#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L) && (_MSC_VER >= 1913))
             template <class TData>
             struct last_impl
             {
@@ -772,20 +785,12 @@ namespace macsignee {
 #pragma endregion // template specialization
 
 #pragma region contructors and so
-        private:
-            //const TContainer* pSource = nullptr;
         public:
             //-------------------------------------
             // attributes
             using value_type = typename TContainer::value_type;
             TContainer value;
-        private:
-            template <class T, class TOrigin>
-            static Enumerable<std::vector<T>> CreateVectorEnumerable(size_t reserve = 0) {
-                Enumerable<std::vector<T>> result;
-                if (reserve > 0) result.value.reserve(reserve);
-                return result;
-            }
+
         public:
             //-------------------------------------
             // ctor / dtor
@@ -1157,7 +1162,7 @@ namespace macsignee {
         // STL algorithm implementation all method need sort previously
             auto SortedDistinct(std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 Enumerable<TContainer> result;
-                std::unique_copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_fw(result.value), predicate);
+                std::unique_copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_n(result.value), predicate);
                 return result;
             }
             template <class TOther>
@@ -1290,7 +1295,7 @@ namespace macsignee {
 
             }
 
-#if __cplusplus > 201402L
+#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L) && (_MSC_VER >= 1913))
             auto First() const {
                 std::optional<value_type> result = Count() ? *std::cbegin(value) : std::nullopt;
                 return result;
