@@ -25,7 +25,7 @@
 #endif
 
 namespace macsignee {
-namespace cppLinq {
+    namespace cppLinq {
 
 #pragma region utilities
         //----------------------------------------
@@ -87,7 +87,7 @@ namespace cppLinq {
             template <class TSource, typename T>
             static auto copy_filtered_v(TSource&& source, std::function<bool(const T&)>&& predicate) {
                 Enumerable<TSource> dest(std::forward<TSource>(source));
-                dest.value.reserve(count_(source));
+                dest.value.reserve(count_<TSource>(source));
                 auto last = std::remove_if(std::begin(dest.value), std::end(dest.value), std::not1(predicate));
                 //auto itr = std::begin(dest.value);
                  //for (; itr != std::end(dest.value); ) {
@@ -397,7 +397,7 @@ namespace cppLinq {
             struct take_impl
             {
                 auto operator()(TSource&& source, std::size_t count) {
-                    if (count_(TSource) == 0 || count == 0) return Enumerable<TSource>();
+                    if (count_<TSource>(source) == 0 || count == 0) return Enumerable<TSource>();
                     return range_copy<TSource::iterator, TSource>(std::begin(source), count_(source) < count ? std::end(source) : std::next(std::begin(source), count));
                 };
             };
@@ -639,7 +639,7 @@ namespace cppLinq {
             };
 
             template <class TData>
-            std::size_t count_(const TData& data) {
+            static std::size_t count_(const TData& data) {
                 return count_impl<TData>()(data);
             }
 
@@ -1016,7 +1016,7 @@ namespace cppLinq {
                 std::function<bool(const value_type&, const value_type&)> predicate = std::less<val_t<value_type>>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot union ");
                 auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
-                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
+                std::set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
                 for (auto elm : another)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
                 result.value.shrink_to_fit();
@@ -1032,7 +1032,7 @@ namespace cppLinq {
             auto Intersect(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot intersect ");
                 auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
-                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
+                std::set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : value) if (temp.find(elm) == temp.end()) { temp.insert(elm); }
                 for (auto elm : another) if (temp.find(elm) != temp.end()) { result.value.emplace_back(elm); temp.erase(elm); }
                 result.value.shrink_to_fit();
@@ -1048,7 +1048,7 @@ namespace cppLinq {
             auto Except(const TOther& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>) {
                 static_assert(std::is_same_v<val_t<value_type>, val_t<TOther::value_type>>, "cannnot except ");
                 auto result = Enumerable::CreateVectorEnumerable<val_t<value_type>>(Count() + count_(another));
-                std::unordered_set<value_type, decltype(predicate)> temp(predicate);
+                std::set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : another) temp.insert(elm);
                 for (auto elm : value)
                     if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
@@ -1178,18 +1178,18 @@ namespace cppLinq {
 #endif
 #pragma endregion 
 
-            auto ToVector() && {
+            auto ToVector()&& {
                 auto to_vector = to_vector_impl<std::decay_t<decltype(value)>>();
                 return to_vector(std::move(value));
             }
 
-            auto ToList() && {
+            auto ToList()&& {
                 auto to_list = to_list_impl<std::decay_t<decltype(value)>>();
                 return to_list(std::move(value));
             }
 
             template <typename TGetKey, typename TGetValue>
-            auto ToDictionary(TGetKey&& getKey, TGetValue&& getValue) && {
+            auto ToDictionary(TGetKey&& getKey, TGetValue&& getValue)&& {
                 using key_type = decltype(getKey(std::declval<value_type>()));
                 using val_type = decltype(getValue(std::declval<value_type>()));
                 std::unordered_map<key_type, val_type> result(count_(value));
@@ -1199,7 +1199,7 @@ namespace cppLinq {
                 result.size_to_fit();
                 return result;
             }
- 
+
             // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
@@ -1226,7 +1226,7 @@ namespace cppLinq {
             template <typename TChar>
             auto ToString(std::function<const std::basic_string<TChar>(const value_type&)> converter) {
                 std::basic_string<TChar> result;
-                for(auto val : value)
+                for (auto val : value)
                     result.append(converter(val));
                 return result;
             }
@@ -1439,7 +1439,7 @@ namespace cppLinq {
             template <class T, class TSource>
             static Enumerable<std::vector<T>> CreateVectorEnumerable(TSource&& source) {
                 Enumerable<std::vector<T>> result;
-                result.value.Reserve(count_(source));
+                result.value.reserve(count_<TSource>(source));
                 std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(result.value));
                 return result;
             }
@@ -1494,8 +1494,8 @@ namespace cppLinq {
 #ifdef _AFX
         template <typename T, typename TArg>
         inline auto From(const CArray<T, TArg>& carray) {
-            auto cbegin = [](const CArray<T, TArg>& cary) {return (&cary.GetAt(0));};
-            auto cend   = [](const CArray<T, TArg>& cary) {return (&cary.GetAt(cary.GetSize() - 1) + 1);};
+            auto cbegin = [](const CArray<T, TArg>& cary) {return (&cary.GetAt(0)); };
+            auto cend = [](const CArray<T, TArg>& cary) {return (&cary.GetAt(cary.GetSize() - 1) + 1); };
 
             Enumerable<std::vector<T>> dest;
             dest.value.reserve(carray.GetSize());
@@ -1517,5 +1517,5 @@ namespace cppLinq {
         }
 
 #pragma endregion  // entry functions
-}// cppLinq
+    }// cppLinq
 }// macsignee
