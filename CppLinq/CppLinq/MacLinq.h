@@ -24,7 +24,7 @@
 #endif
 
 namespace macsignee {
-    namespace cppLinq {
+namespace cppLinq {
 
 #pragma region utilities
         //----------------------------------------
@@ -1471,5 +1471,5 @@ namespace macsignee {
         }
 
 #pragma endregion  // entry functions
-    }// cppLinq
+}// cppLinq
 }// macsignee
