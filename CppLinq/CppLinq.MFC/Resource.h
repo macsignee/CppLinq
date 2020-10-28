@@ -2,9 +2,6 @@
 // Microsoft Visual C++ で生成されたインクルード ファイル。
 // CppLinqMFC.rc で使用されます
 //
-#define IDR_MAINFRAME					128
-#define IDD_CPPLINQMFC_DIALOG				102
-
 // 新しいオブジェクトの次の既定値
 //
 #ifdef APSTUDIO_INVOKED
