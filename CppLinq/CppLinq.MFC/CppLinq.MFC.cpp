@@ -5,7 +5,6 @@
 #include "pch.h"
 #include "framework.h"
 #include "CppLinq.MFC.h"
-#include "CppLinq.MFCDlg.h"
 #include "..\CppLinq\MacLinq.h"
 
 #ifdef _DEBUG
@@ -16,26 +15,18 @@ using namespace macsignee::cppLinq;
 // CppLinqApp
 
 BEGIN_MESSAGE_MAP(CppLinqApp, CWinApp)
-	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
 
 
 // CppLinqApp の構築
-
-CppLinqApp::CppLinqApp()
-{
-	// TODO: この位置に構築用コードを追加してください。
-	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
-}
+CppLinqApp::CppLinqApp(){}
 
 
 // 唯一の CppLinqApp オブジェクト
-
 CppLinqApp theApp;
 
 
 // CppLinqApp の初期化
-
 BOOL CppLinqApp::InitInstance()
 {
 	CWinApp::InitInstance();
