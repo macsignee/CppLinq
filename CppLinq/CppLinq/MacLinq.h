@@ -60,7 +60,7 @@ namespace macsignee {
                 Enumerable<TDest> dest;
                 //reserve(dest, count_(source));
                 dest.value.reserve(count_(source));
-                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), std::forward<TFunction>(copyer));
+                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value), std::forward<TFunction>(copyer));
                 return dest;
             };
 
@@ -121,10 +121,10 @@ namespace macsignee {
                 static constexpr bool value = decltype(test((T*)nullptr))::value;
             };
 
-            template <typename TData, std::enable_if_t< has_push_back< TData>::value, bool> = true>
+            template <typename TData, std::enable_if_t<has_push_back<TData>::value, bool> = true>
             static inline auto inserter_(TData& data) { return  std::back_inserter(data); };
 
-            template <typename TData, std::enable_if_t< !has_push_back< TData>::value && has_insert < TData>::value && has_begin < TData>::value, bool> = true>
+            template <typename TData, std::enable_if_t<!has_push_back<TData>::value && has_insert<TData>::value && has_begin<TData>::value, bool> = true>
             static inline auto inserter_(TData& data) { return  std::inserter(data, std::begin(data)); };
 
             //template <class TData>
@@ -132,12 +132,6 @@ namespace macsignee {
 
             //template <class TData>
             //static inline auto inserter_n(TData& data) { return std::inserter(data, std::begin(data)); };
-            template <class TData>
-            static inline auto inserter_bk(TData& data) { return  inserter_(data); };
-
-            template <class TData>
-            static inline auto inserter_n(TData& data) { return inserter_(data); };
-
 
             template<typename TItr>
             static inline auto move_itr(TItr itr) { return std::make_move_iterator(itr); }
@@ -192,7 +186,7 @@ namespace macsignee {
             template <class TSource, typename T>
             static auto copy_filtered_sp(TSource&& source, std::function<bool(const T&)>&& predicate) {
                 auto dest = Enumerable::CreateVectorEnumerable<T>(count_(source));
-                auto last = std::copy_if(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value), predicate);
+                auto last = std::copy_if(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value), predicate);
 
                 return dest;
             }
@@ -290,7 +284,7 @@ namespace macsignee {
                 auto dest = Enumerable::CreateVectorEnumerable<T>(size);
                 std::size_t index = 0;
                 auto itr_ss = move_itr(std::begin(source));
-                auto itr_d = inserter_bk(dest.value);
+                auto itr_d = inserter_(dest.value);
                 for (; itr_ss != move_itr(std::end(source)); ++itr_ss) {
                     if (predicate(*itr_ss, index)) {
                         *itr_d = *itr_ss;
@@ -488,7 +482,7 @@ namespace macsignee {
             template <class TData, typename T>
             static auto copy_reverse_to_v(TData&& source) {
                 auto dest = Enumerable::CreateVectorEnumerable<T>(count_(source));
-                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(dest.value));
+                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value));
                 std::reverse(dest.value.begin(), dest.value.end());
                 return dest;
             }
@@ -1072,8 +1066,8 @@ namespace macsignee {
             auto Concat(const TOther& another) {
                 static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TOther::value_type>>, "cannnot concatinate ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + count_(another));
-                std::copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_bk(result.value));
-                std::copy(move_itr(std::begin(another)), move_itr(std::end(another)), inserter_bk(result.value));
+                std::copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_(result.value));
+                std::copy(move_itr(std::begin(another)), move_itr(std::end(another)), inserter_(result.value));
 
                 return result;
             }
@@ -1223,7 +1217,7 @@ namespace macsignee {
         // STL algorithm implementation all method need sort previously
             auto SortedDistinct(std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 Enumerable<TContainer> result;
-                std::unique_copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_n(result.value), predicate);
+                std::unique_copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_(result.value), predicate);
                 return result;
             }
             template <class TOther>
@@ -1525,7 +1519,7 @@ namespace macsignee {
             static Enumerable<std::vector<T>> CreateVectorEnumerable(TSource&& source) {
                 Enumerable<std::vector<T>> result;
                 result.value.reserve(count_<TSource>(source));
-                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_bk(result.value));
+                std::copy(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(result.value));
                 return result;
             }
         };
