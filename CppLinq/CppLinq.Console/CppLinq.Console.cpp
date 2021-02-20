@@ -1,6 +1,7 @@
 ﻿
 #include <iostream>
 #include "testFunc.h"
+#include <type_traits>
 #include "../CppLinq/MacLinq.h"
 
 int main()

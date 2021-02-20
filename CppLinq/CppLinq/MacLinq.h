@@ -44,16 +44,16 @@ namespace macsignee {
             // attributes
             using value_type = typename TContainer::value_type;
             TContainer value;
-        public:
-            //template<class TContainer>
+        private:
+            //template <class TContainer>
             //static auto reserve(Enumerable<TContainer> container, size_t size)->decltype(container.value.reserve(size)) {
-            //    container.reserve.reserve(size);
+            //    container.reserve(size);
             //}
-            //template<class TContainer>
-            //static auto reserve(Enumerable<TContainer> container, size_t size)->void {
+            ////template <class TContainer>
+            ////static auto reserve(Enumerable<TContainer> container, size_t size)->void {
 
-            //}
-
+            ////}
+        public:
             template <class TSource, class TDest, typename TFunction>
             static auto transform(TSource&& source, TFunction&& copyer) {
                 //Enumerable::copy<decltype<TSource>::iterator,TDest>(move_itr(std::begin(source)), move_itr(std::end(source) >
@@ -78,12 +78,66 @@ namespace macsignee {
             //struct has_value_type : std::false_type {};
             //template <class T>
             //struct has_value_type<T, std::void_t<typename T::element_type>> : std::true_type {};
+            template <typename T>
+            struct has_begin {
+                using dummy_type = int;
+            private:
+                template <typename U>
+                static auto test(dummy_type) -> decltype(std::begin(std::declval<U>()), std::true_type());
+                template <typename U>
+                static auto test(...) -> decltype(std::false_type());
+            public:
+                using type = decltype(test<T>(0));
+                static constexpr bool value = type::value || std::is_array<T>::value;
+            };
+
+            template <typename T>
+            struct has_push_back {
+            private:
+                template <typename U, int = (&U::push_back, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            template <typename T>
+            struct has_push_front {
+            private:
+                template <typename U, int = (&U::push_front, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            template <typename T>
+            struct has_insert {
+            private:
+                template <typename U, int = (&U::insert, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            template <typename TData, std::enable_if_t< has_push_back< TData>::value, bool> = true>
+            static inline auto inserter_(TData& data) { return  std::back_inserter(data); };
+
+            template <typename TData, std::enable_if_t< !has_push_back< TData>::value && has_insert < TData>::value && has_begin < TData>::value, bool> = true>
+            static inline auto inserter_(TData& data) { return  std::inserter(data, std::begin(data)); };
+
+            //template <class TData>
+            //static inline auto inserter_bk(TData& data) { return  std::back_inserter(data); };
+
+            //template <class TData>
+            //static inline auto inserter_n(TData& data) { return std::inserter(data, std::begin(data)); };
+            template <class TData>
+            static inline auto inserter_bk(TData& data) { return  inserter_(data); };
 
             template <class TData>
-            static inline auto inserter_bk(TData& data) { return  std::back_inserter(data); };
+            static inline auto inserter_n(TData& data) { return inserter_(data); };
 
-            template <class TData>
-            static inline auto inserter_n(TData& data) { return std::inserter(data, std::begin(data)); };
 
             template<typename TItr>
             static inline auto move_itr(TItr itr) { return std::make_move_iterator(itr); }
@@ -891,12 +945,16 @@ namespace macsignee {
                 return result;
             }
 
+            // TO DO
             //SelectMany<TSource, TCollection, TResult>(IEnumerable<TSource>, Func<TSource, IEnumerable<TCollection>>, Func<TSource, TCollection, TResult>)
             //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化して、その各要素に対して結果のセレクター関数を呼び出します。
+            // TO DO
             //SelectMany<TSource, TCollection, TResult>(IEnumerable<TSource>, Func<TSource, Int32, IEnumerable<TCollection>>, Func<TSource, TCollection, TResult>)
             //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化して、その各要素に対して結果のセレクター関数を呼び出します。 各ソース要素のインデックスは、その要素の中間の射影されたフォームで使用されます。
+            // TO DO
             //SelectMany<TSource, TResult>(IEnumerable<TSource>, Func<TSource, IEnumerable<TResult>>)
             //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化します。
+            // TO DO
             //SelectMany<TSource, TResult>(IEnumerable<TSource>, Func<TSource, Int32, IEnumerable<TResult>>)
             //シーケンスの各要素を IEnumerable<T> に射影し、結果のシーケンスを 1 つのシーケンスに平坦化します。 各ソース要素のインデックスは、その要素の射影されたフォームで使用されます。
 
@@ -922,9 +980,10 @@ namespace macsignee {
                     });
                 return result;
             }
-
-            //SkipLast<TSource>(IEnumerable<TSource>, Int32)
+            // TO DO:
             //    source の要素と、省略されたソース コレクションの最後の count 要素を含む、列挙可能な新しいコレクションを返します。
+            auto SkipLast(const TContainer& source, size_t count) {
+            }
 
             auto Take(std::size_t count) {
                 auto take = take_impl<std::decay_t<decltype(value)>>();
@@ -949,16 +1008,18 @@ namespace macsignee {
                     });
                 return result;
             }
+
+            // TO DO:
             //TakeLast<TSource>(IEnumerable<TSource>, Int32)
             //    source の最後の count 要素を含む、列挙可能な新しいコレクションを返します。
 
+            // TO DO:
             //Append<TSource>(IEnumerable<TSource>, TSource)
             //    シーケンスの末尾に値を追加します。
+            // TO DO:
             //Prepend<TSource>(IEnumerable<TSource>, TSource)
             //    シーケンスの先頭に値を追加します。
 
-            //GroupBy<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
-            //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、指定された関数を使用して各グループの要素を射影します。
             template<typename TKey, typename TValue>
             auto GroupBy(std::function<TKey(const value_type&)> makeKey, std::function<TKey(const value_type&)> makeValue) {
                 std::unordered_multimap<TKey, TValue> map;
@@ -968,18 +1029,25 @@ namespace macsignee {
                     });
                 return Enumerable<decltype(map)>(map);
             }
+            // TO DO:
             //GroupBy<TSource, TKey, TElement, TResult>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, Func<TKey, IEnumerable<TElement>, TResult>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、各グループとそのキーから結果値を作成します。 各グループの要素は、指定された関数を使用して射影されます。
+            // TO DO:
             //GroupBy<TSource, TKey, TElement, TResult>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, Func<TKey, IEnumerable<TElement>, TResult>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、各グループとそのキーから結果値を作成します。 キー値の比較には、指定された比較子を使用し、各グループの要素の射影には、指定された関数を使用します。
+            // TO DO:
             //GroupBy<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             //    キー セレクター関数に従ってシーケンスの要素をグループ化します。 キーの比較には、比較子を使用し、各グループの要素の射影には、指定された関数を使用します。
+            // TO DO:
             //GroupBy<TSource, TKey, TResult>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TKey, IEnumerable<TSource>, TResult>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、各グループとそのキーから結果値を作成します。
+            // TO DO:
             //GroupBy<TSource, TKey, TResult>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TKey, IEnumerable<TSource>, TResult>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、各グループとそのキーから結果値を作成します。 キーの比較には、指定された比較子を使用します。
+            // TO DO:
             //GroupBy<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化します。
+            // TO DO:
             //GroupBy<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数に従ってシーケンスの要素をグループ化し、指定された比較子を使用してキーを比較します。
 
@@ -1143,8 +1211,10 @@ namespace macsignee {
                     std::forward<TJoiner>(joiner));
             }
 
+            // TO DO:
             //GroupJoin<TOuter, TInner, TKey, TResult>(IEnumerable<TOuter>, IEnumerable<TInner>, Func<TOuter, TKey>, Func<TInner, TKey>, Func<TOuter, IEnumerable<TInner>, TResult>)
             //    キーが等しいかどうかに基づいて 2 つのシーケンスの要素を相互に関連付け、その結果をグループ化します。 キーの比較には既定の等値比較子が使用されます。
+            // TO DO:
             //GroupJoin<TOuter, TInner, TKey, TResult>(IEnumerable<TOuter>, IEnumerable<TInner>, Func<TOuter, TKey>, Func<TInner, TKey>, Func<TOuter, IEnumerable<TInner>, TResult>, IEqualityComparer<TKey>)
             //    キーが等しいかどうかに基づいて 2 つのシーケンスの要素を相互に関連付け、その結果をグループ化します。 指定された IEqualityComparer<T> を使用してキーを比較します。
 
@@ -1204,10 +1274,13 @@ namespace macsignee {
                 return result;
             }
 
+            // TO DO:
             // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            // TO DO:
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
             //    指定されたキー セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            // TO DO:
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数およびキーの比較子に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
 
@@ -1215,15 +1288,21 @@ namespace macsignee {
                 return std::unordered_set<value_type>(move_itr(std::begin(value)), move_itr(std::end(value)));
 
             }
+
+            // TO DO:
             // ToHashSet<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
             //    comparer を使用して IEnumerable<T>から HashSet<T> を作成し、キーを比較します。
 
+            // TO DO:
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
             //    指定されたキー セレクター関数および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            // TO DO:
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            // TO DO:
             // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
             //    指定されたキー セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            // TO DO:
             // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //    指定されたキー セレクター関数およびキーの比較子に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
 
@@ -1276,11 +1355,13 @@ namespace macsignee {
                 return std::all_of(std::cbegin(value), std::cend(value), predicate);
             }
 
+            // TO DO
             //template<class TOther>
             //bool SequenceEqual(const TOther& another) {
             //    return true;
             //}
 
+            // TO DO
             //template<class TOther>
             //bool SequenceEqual(const TOther& another, std::function<bool(value_type, typename TOther::value_type)> comparer) {
             //    return true;

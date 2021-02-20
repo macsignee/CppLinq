@@ -1714,7 +1714,7 @@ namespace simple_test
     }
 
     template <typename TContainer>
-    inline void RunTestSequence(TContainer& cont, std::string label, container_type target) {
+    inline void RunTestSequenceEqual(TContainer& cont, std::string label, container_type target) {
 #if FALSE
         return; //not impllemented
         std::cout << "sequence all " << std::endl;
@@ -1787,7 +1787,7 @@ namespace simple_test
         RunTestExcept(cont, label, target);
         RunTestZip(cont, label, target);
         RunTestJoin(cont, label, target);
-        RunTestSequence(cont, label, target);
+        RunTestSequenceEqual(cont, label, target);
         RunTestToCollection(cont, label, target);
     }
 }
