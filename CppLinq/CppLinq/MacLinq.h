@@ -195,27 +195,40 @@ namespace macsignee {
             template <class TSource, typename T>
             static auto copy_filtered_v(TSource&& source, std::function<bool(const T&)>&& predicate) {
                 Enumerable<TSource> dest(std::forward<TSource>(source));
-                reserve_(dest.value, count_<TSource>(source));
                 auto last = std::remove_if(std::begin(dest.value), std::end(dest.value), std::not1(predicate));
                 dest.value.erase(last, dest.value.end());
 
-                return dest;
-            }
-            template <class TSource, typename T>
-            static auto copy_filtered_bk(TSource&& source, std::function<bool(const T&)>&& predicate) {
-                Enumerable<TSource> dest(std::forward<TSource>(source));
-                auto last = std::remove_if(std::begin(dest.value), std::end(dest.value), std::not1(predicate));
-                dest.value.erase(last, dest.value.end());
                 return dest;
             }
 
             template <class TSource>
-            static auto copy_filtered_fw(TSource&& source, std::function<bool(const typename TSource::value_type&)> predicate) {
+            static auto copy_filtered_index(TSource&& source, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
                 Enumerable<TSource> dest(std::forward<TSource>(source));
+                std::size_t index = 0;
                 for (auto itr = std::begin(dest.value); itr != std::end(dest.value); ) {
-                    if (!predicate(*itr)) itr = dest.value.erase(itr);
-                    else ++itr;
+                    if (predicate(*itr, index)) {
+                        ++itr; ++index;
+                    }
+                    else
+                        itr = dest.value.erase(itr);
                 }
+                return dest;
+            }
+
+            template <class TSource, typename T>
+            static auto filter_copy_toV_index(TSource&& source, std::size_t size, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
+                auto dest = Enumerable::CreateVectorEnumerable<T>(size);
+                std::size_t index = 0;
+                auto itr_ss = move_itr(std::begin(source));
+                auto itr_d = inserter_(dest.value);
+                for (; itr_ss != move_itr(std::end(source)); ++itr_ss) {
+                    if (predicate(*itr_ss, index)) {
+                        *itr_d = *itr_ss;
+                        ++itr_d;
+                        ++index;
+                    }
+                }
+                dest.value.shrink_to_fit();
                 return dest;
             }
 
@@ -223,7 +236,12 @@ namespace macsignee {
             struct where_impl
             {
                 auto operator()(TSource&& source, std::function<bool(const typename TSource::value_type&)> predicate) {
-                    return copy_filtered_fw<TSource>(std::forward<TSource>(source), predicate);
+                    Enumerable<TSource> dest(std::forward<TSource>(source));
+                    for (auto itr = std::begin(dest.value); itr != std::end(dest.value); ) {
+                        if (!predicate(*itr)) itr = dest.value.erase(itr);
+                        else ++itr;
+                    }
+                    return dest;
                 }
             };
 
@@ -241,7 +259,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::list<T, TAllocator>;
                 auto operator()(cont_type&& source, std::function<bool(const T&)> predicate) {
-                    return copy_filtered_bk<cont_type, T>(std::forward<cont_type>(source), std::forward<std::function<bool(const T&)>>(predicate));
+                    return copy_filtered_v<cont_type, T>(std::forward<cont_type>(source), std::forward<std::function<bool(const T&)>>(predicate));
 
                 }
             };
@@ -251,7 +269,7 @@ namespace macsignee {
             {
                 using cont_type = typename std::deque<T, TAllocator>;
                 auto operator()(cont_type&& source, std::function<bool(const T&)> predicate) {
-                    return copy_filtered_bk<cont_type, T>(std::forward<cont_type>(source), std::forward<std::function<bool(const T&)>>(predicate));
+                    return copy_filtered_v<cont_type, T>(std::forward<cont_type>(source), std::forward<std::function<bool(const T&)>>(predicate));
                 }
             };
 
@@ -285,37 +303,6 @@ namespace macsignee {
 
             //-------------------
             // where with index 
-            template <class TSource>
-            static auto copy_filtered_index(TSource&& source, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
-                Enumerable<TSource> dest(std::forward<TSource>(source));
-                std::size_t index = 0;
-                for (auto itr = std::begin(dest.value); itr != std::end(dest.value); ) {
-                    if (predicate(*itr, index)) {
-                        ++itr; ++index;
-                    }
-                    else
-                        itr = dest.value.erase(itr);
-                }
-                return dest;
-            }
-
-            template <class TSource, typename T>
-            static auto filter_copy_toV_index(TSource&& source, std::size_t size, std::function<bool(const typename TSource::value_type&, std::size_t)> predicate) {
-                auto dest = Enumerable::CreateVectorEnumerable<T>(size);
-                std::size_t index = 0;
-                auto itr_ss = move_itr(std::begin(source));
-                auto itr_d = inserter_(dest.value);
-                for (; itr_ss != move_itr(std::end(source)); ++itr_ss) {
-                    if (predicate(*itr_ss, index)) {
-                        *itr_d = *itr_ss;
-                        ++itr_d;
-                        ++index;
-                    }
-                }
-                dest.value.shrink_to_fit();
-                return dest;
-            }
-
             template <class TSource>
             struct where_index_impl
             {
