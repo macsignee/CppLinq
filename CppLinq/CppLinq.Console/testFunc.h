@@ -166,6 +166,199 @@ namespace simple_test
     }
 
     template <typename TContainer>
+    inline void RunTestOrderBy(TContainer& cont, std::string label, container_type target) {
+        using val_type = typename TContainer::value_type;
+        std::cout << "orderBy " << std::endl;
+        auto n_1 = From(cont).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
+            return lhs > rhs; });
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+        }
+
+        TContainer empty{};
+        std::cout << "orderBy Empty" << std::endl;
+        auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
+            return lhs > rhs; });
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_1_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_1_, {})); break;
+        }
+
+        std::cout << "orderBy elm" << std::endl;
+        auto n_2 = From(cont).OrderBy(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_2, { 1,2,3,4,5,6,7,8,9 })); break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_2, { 1,2,2,3,3,4,5,5,6,7,8,8,9 })); break;
+        }
+
+        std::cout << "orderBy elm empty" << std::endl;
+        auto n_2_ = From(empty).OrderBy(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_2_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_2_, {})); break;
+        }
+
+        std::cout << "orderByDescending elm" << std::endl;
+        auto n_3 = From(cont).OrderByDescending(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_3, { 9,8,7,6,5,4,3,2,1 })); break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_3, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+        }
+
+        std::cout << "orderByDescending elm empty" << std::endl;
+        auto n_3_ = From(empty).OrderByDescending(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_3_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_3_, {})); break;
+        }
+
+        std::cout << "thenBy elm" << std::endl;
+        auto n_4 = From(cont).ThenBy(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_4, { 1,2,3,4,5,6,7,8,9 })); break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_4, { 1,2,2,3,3,4,5,5,6,7,8,8,9 })); break;
+        }
+
+        std::cout << "thenByDescending elm" << std::endl;
+        auto n_5 = From(cont).ThenByDescending(lmb_rt);
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_5, { 9,8,7,6,5,4,3,2,1 }));  break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_5, { 9,8,8,7,6,5,5,4,3,3,2,2,1 }));  break;
+        }
+
+        std::cout << "sortBy " << std::endl;
+        auto n_6 = From(cont).SortBy(lmb_lt);
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique: assert(checkArray(n_6, { 9,8,7,6,5,4,3,2,1 })); break;
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_6, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+        }
+
+        std::cout << "sortBy empty" << std::endl;
+        auto n_6_ = From(empty).SortBy(lmb_lt);
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_6_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_6_, {})); break;
+        }
+    }
+
+    template <typename TContainer>
+    inline void RunTestSelect(TContainer& cont, std::string label, container_type target) {
+        using val_type = typename TContainer::value_type;
+        std::cout << "select " << std::endl;
+        auto n_1 = From(cont).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique: assert(checkArray(n_1, { {1, "1"}, {2, "2"}, {3, "3"}, {4, "4"}, {5,"5"}, {6, "6"}, {7, "7"}, {8, "8"}, {9, "9"} })); break;
+        case container_type::hash_unique: assert(checkUnique(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"} })); break;
+        case container_type::hash_multi:
+        case container_type::multi: assert(checkUnique(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"}, {5, "5"}, {3,"3"}, {8, "8"}, {2, "2"} })); break;
+        default: assert(checkArray(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"}, {5, "5"}, {3,"3"}, {8, "8"}, {2, "2"} })); break;
+        }
+
+        TContainer empty{};
+        std::cout << "select empty" << std::endl;
+        auto n_1_ = From(empty).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_1_, { {0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"} })); break;
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkArray(n_1_, {})); break;
+        }
+
+        std::cout << "select with index" << std::endl;
+        auto n_2 = From(cont).Select<std::tuple<size_t, val_type>>([](const auto& elm, size_t index) {return std::make_tuple(index, elm); });
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique: assert(checkArray(n_2, { {0, 1}, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 8 }, { 8, 9 } })); break;
+        case container_type::hash_unique: break; // todo
+        case container_type::multi:
+        case container_type::hash_multi:  break; // todo
+        default: assert(checkArray(n_2, { {0, 2}, { 1, 3 }, { 2, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 9 }, { 7, 8 }, { 8, 7 }, {9, 5}, {10,3}, {11, 8}, {12, 2} })); break;
+        }
+
+        std::cout << "select with index empty" << std::endl;
+        auto n_2_ = From(empty).Select<std::tuple<size_t, val_type>>([](const auto& elm, size_t index) {return std::make_tuple(index, elm); });
+        switch (target) {
+            //case target::sequence   :
+        case container_type::array: assert(checkArray(n_2_, { {0, 0},{1, 0},{2, 0},{3, 0},{4, 0},{5, 0},{6, 0},{7, 0},{8, 0},{9, 0},{10, 0},{11, 0},{12, 0} })); break;
+        case container_type::unique:
+        case container_type::hash_unique: break; // todo
+        case container_type::multi:
+        case container_type::hash_multi:  break; // todo
+        default: assert(checkArray(n_2_, {})); break;
+        }
+
+        std::cout << "foreach " << std::endl;
+        size_t cnt = 0;
+        From(cont).ForEach([&](const auto& elm) {cnt++; });
+        switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique:
+        case container_type::hash_unique:
+        case container_type::multi:
+        case container_type::hash_multi:
+        default: assert(checkNumber(From(cont).Count(), cnt)); break;
+        }
+    }
+
+    template <typename TContainer>
     inline void RunTestSkipTake(TContainer& cont, std::string label, container_type target) {
         using val_type = typename TContainer::value_type;
         auto tname = typeid(TContainer).name();
@@ -223,27 +416,24 @@ namespace simple_test
     }
 
     template <typename TContainer>
-    inline void RunTestOrderBy(TContainer& cont, std::string label, container_type target) {
-        using val_type = typename TContainer::value_type;
-        std::cout << "orderBy " << std::endl;
-        auto n_1 = From(cont).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
-            return lhs > rhs; });
+    inline void RunTestReverse(TContainer& cont, std::string label, container_type target) {
+        std::cout << "reverse :" << std::endl;
+        auto n_1 = From(cont).Reverse();
         switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+            //case target::sequence         :
+            //case target::array            : 
+        case container_type::unique: assert(checkArray(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
+        case container_type::hash_unique: assert(checkUnique(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
+        case container_type::multi: assert(checkArray(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+        case container_type::hash_multi: assert(checkUnique(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
+        default: assert(checkArray(n_1, { 2,8,3,5,7,8,9,6,5,4,1,3,2 })); break;
         }
 
         TContainer empty{};
-        std::cout << "orderBy Empty" << std::endl;
-        auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
-            return lhs > rhs; });
+        std::cout << "reverse : empty" << std::endl;
+        auto n_1_ = From(empty).Reverse();
         switch (target) {
-        //case target::sequence   :
+            //case target::sequence         :
         case container_type::array: assert(checkArray(n_1_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
         case container_type::unique:
         case container_type::hash_unique:
@@ -251,167 +441,177 @@ namespace simple_test
         case container_type::hash_multi:
         default: assert(checkArray(n_1_, {})); break;
         }
+    }
 
-        std::cout << "orderBy elm" << std::endl;
-        auto n_2 = From(cont).OrderBy(lmb_rt);
+    template <typename TContainer>
+    inline void RunTestDistinct(TContainer& cont, std::string label, container_type target) {
+        std::cout << "distinct : no condition" << std::endl;
+        auto n_1 = From(cont).Distinct();
         switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_2, { 1,2,3,4,5,6,7,8,9 })); break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_2, { 1,2,2,3,3,4,5,5,6,7,8,8,9 })); break;
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique: assert(checkArray(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::hash_unique: assert(checkUnique(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::multi: assert(checkArray(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::hash_multi: assert(checkUnique(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        default: assert(checkArray(n_1, { 2, 3, 1, 4, 5, 6, 9, 8, 7 })); break;
         }
 
-        std::cout << "orderBy elm empty" << std::endl;
-        auto n_2_ = From(empty).OrderBy(lmb_rt);
+        std::cout << "distinct : condition" << std::endl;
+        auto n_2 = From(cont).Distinct([](const auto& lhs, const auto& rhs) {return lhs > rhs; });
         switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_2_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_2_, {})); break;
-        }
-
-        std::cout << "orderByDescending elm" << std::endl;
-        auto n_3 = From(cont).OrderByDescending(lmb_rt);
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_3, { 9,8,7,6,5,4,3,2,1 })); break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_3, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
-        }
-
-        std::cout << "orderByDescending elm empty" << std::endl;
-        auto n_3_ = From(empty).OrderByDescending(lmb_rt);
-        switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_3_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_3_, {})); break;
-        }
-
-        std::cout << "thenBy elm" << std::endl;
-        auto n_4 = From(cont).ThenBy(lmb_rt);
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_4, { 1,2,3,4,5,6,7,8,9 })); break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_4, { 1,2,2,3,3,4,5,5,6,7,8,8,9 })); break;
-        }
-
-        std::cout << "thenByDescending elm" << std::endl;
-        auto n_5 = From(cont).ThenByDescending(lmb_rt);
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_5, { 9,8,7,6,5,4,3,2,1 }));  break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_5, { 9,8,8,7,6,5,5,4,3,3,2,2,1 }));  break;
-        }
-
-        std::cout << "sortBy " << std::endl;
-        auto n_6 = From(cont).SortBy(lmb_lt);
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique: assert(checkArray(n_6, { 9,8,7,6,5,4,3,2,1 })); break;
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_6, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
-        }
-
-        std::cout << "sortBy empty" << std::endl;
-        auto n_6_ = From(empty).SortBy(lmb_lt);
-        switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_6_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_6_, {})); break;
+            //case target::sequence   :
+            //case target::array    : 
+        case container_type::unique: assert(checkArray(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::hash_unique: assert(checkUnique(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::multi: assert(checkArray(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        case container_type::hash_multi: assert(checkUnique(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
+        default: assert(checkArray(n_2, { 2, 3, 1, 4, 5, 6, 9, 8, 7 })); break;
         }
     }
 
     template <typename TContainer>
-    inline void RunTestSelect(TContainer& cont, std::string label, container_type target) {
-        using val_type = typename TContainer::value_type;
-        std::cout << "select " << std::endl;
-        auto n_1 = From(cont).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique: assert(checkArray(n_1, { {1, "1"}, {2, "2"}, {3, "3"}, {4, "4"}, {5,"5"}, {6, "6"}, {7, "7"}, {8, "8"}, {9, "9"} })); break;
-        case container_type::hash_unique: assert(checkUnique(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"} })); break;
-        case container_type::hash_multi:
-        case container_type::multi: assert(checkUnique(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"}, {5, "5"}, {3,"3"}, {8, "8"}, {2, "2"} })); break;
-        default: assert(checkArray(n_1, { {2, "2"}, {3, "3"}, {1, "1"}, {4, "4"}, {5,"5"}, {6, "6"}, {9, "9"}, {8, "8"}, {7, "7"}, {5, "5"}, {3,"3"}, {8, "8"}, {2, "2"} })); break;
+    inline void RunTestCountAnyAll(TContainer& cont, std::string label, container_type target) {
+        {
+            std::cout << "count :" << std::endl;
+
+            auto n_8 = From(cont).Count();
+            switch (target) {
+                //case target::sequence   :
+                //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique: assert(checkNumber(set_.size(), n_8)); break;
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkNumber(vec_.size(), n_8)); break;
+            }
         }
 
         TContainer empty{};
-        std::cout << "select empty" << std::endl;
-        auto n_1_ = From(empty).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
-        switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_1_, { {0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"},{0, "0"} })); break;
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_1_, {})); break;
+        {
+            std::cout << "count : empty" << std::endl;
+            auto n_8_ = From(empty).Count();
+            switch (target) {
+                //case target::sequence   :
+            case container_type::array: assert(checkNumber(arraySize, n_8_)); break;
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkNumber(0, n_8_)); break;
+            }
         }
 
-        std::cout << "select with index" << std::endl;
-        auto n_2 = From(cont).Select<std::tuple<size_t, val_type>>([](const auto& elm, size_t index) {return std::make_tuple(index, elm); });
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique: assert(checkArray(n_2, { {0, 1}, { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 8 }, { 8, 9 } })); break;
-        case container_type::hash_unique: break; // todo
-        case container_type::multi:
-        case container_type::hash_multi:  break; // todo
-        default: assert(checkArray(n_2, { {0, 2}, { 1, 3 }, { 2, 1 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 9 }, { 7, 8 }, { 8, 7 }, {9, 5}, {10,3}, {11, 8}, {12, 2} })); break;
+        {
+            std::cout << "Any : no Condition" << std::endl;
+            auto n_A1 = From(cont).Any();
+            switch (target) {
+                //case target::sequence   :
+                //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A1, true)); break;
+            }
         }
 
-        std::cout << "select with index empty" << std::endl;
-        auto n_2_ = From(empty).Select<std::tuple<size_t, val_type>>([](const auto& elm, size_t index) {return std::make_tuple(index, elm); });
-        switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_2_, { {0, 0},{1, 0},{2, 0},{3, 0},{4, 0},{5, 0},{6, 0},{7, 0},{8, 0},{9, 0},{10, 0},{11, 0},{12, 0} })); break;
-        case container_type::unique:
-        case container_type::hash_unique: break; // todo
-        case container_type::multi:
-        case container_type::hash_multi:  break; // todo
-        default: assert(checkArray(n_2_, {})); break;
+        {
+            std::cout << "Any : no Condition empty" << std::endl;
+            auto n_A1_ = From(empty).Any();
+            switch (target) {
+                //case target::sequence   :
+            case container_type::array: assert(checkBool(n_A1_, true)); break;
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A1_, false)); break;
+            }
         }
 
-        std::cout << "foreach " << std::endl;
-        size_t cnt = 0;
-        From(cont).ForEach([&](const auto& elm) {cnt++; });
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkNumber(From(cont).Count(), cnt)); break;
+        {
+            std::cout << "Any : Condition true " << std::endl;
+            auto n_A2 = From(cont).Any([](const auto& elm) {return elm == 2; });
+            switch (target) {
+                //case target::sequence   :
+                //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A2, true)); break;
+            }
+        }
+
+        {
+            std::cout << "Any : Condition true empty" << std::endl;
+            auto n_A2_ = From(empty).Any([](const auto& elm) {return elm == 2; });
+            switch (target) {
+                //case target::sequence   :
+                //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A2_, false)); break;
+            }
+        }
+
+        {
+            std::cout << "Any : Condition false" << std::endl;
+            auto n_A3 = From(cont).Any([](const auto& elm) {return elm == 31; });
+            switch (target) {
+                //case container_type::sequence   :
+                //case container_type::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A3, false)); break;
+            }
+        }
+
+        {
+            std::cout << "All : Condition true " << std::endl;
+            auto n_A2 = From(cont).All([](const auto& elm) {return elm > 0; });
+            switch (target) {
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            case container_type::sequence:
+            case container_type::array:
+            default: assert(checkBool(n_A2, true)); break;
+            }
+        }
+
+        {
+            std::cout << "All : Condition true empty" << std::endl;
+            auto n_A2_ = From(empty).All([](const auto& elm) {return elm > 0; });
+            switch (target) {
+            case container_type::array: assert(checkBool(n_A2_, false)); break;
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            case container_type::sequence:
+            default: assert(checkBool(n_A2_, true)); break;
+            }
+        }
+
+        {
+            std::cout << "All : Condition false" << std::endl;
+            auto n_A3 = From(cont).All([](const auto& elm) {return elm < 0; });
+            switch (target) {
+                //case target::sequence   :
+                //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkBool(n_A3, false)); break;
+            }
         }
     }
 
@@ -518,174 +718,36 @@ namespace simple_test
     }
 
     template <typename TContainer>
-    inline void RunTestCountAnyAll(TContainer& cont, std::string label, container_type target) {
-        std::cout << "count :" << std::endl;
-        {
-            auto n_8 = From(cont).Count();
-            switch (target) {
-            //case target::sequence   :
-            //case target::array    : 
-            case container_type::unique:
-            case container_type::hash_unique: assert(checkNumber(set_.size(), n_8)); break;
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkNumber(vec_.size(), n_8)); break;
-            }
-        }
-
-        TContainer empty{};
-        std::cout << "count : empty" << std::endl;
-        {
-            auto n_8_ = From(empty).Count();
-            switch (target) {
-            //case target::sequence   :
-            case container_type::array: assert(checkNumber(arraySize, n_8_)); break;
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkNumber(0, n_8_)); break;
-            }
-        }
-
-        std::cout << "Any : no Condition" << std::endl;
-        auto n_A1 = From(cont).Any();
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkBool(n_A1, true)); break;
-        }
-
-        std::cout << "Any : no Condition empty" << std::endl;
-        {
-            auto n_A1_ = From(empty).Any();
-            switch (target) {
-            //case target::sequence   :
-            case container_type::array: assert(checkBool(n_A1_, true)); break;
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkBool(n_A1_, false)); break;
-            }
-        }
-
-        std::cout << "Any : Condition true " << std::endl;
-        {
-            auto n_A2 = From(cont).Any([](const auto& elm) {return elm == 2; });
-            switch (target) {
-            //case target::sequence   :
-            //case target::array    : 
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkBool(n_A2, true)); break;
-            }
-        }
-
-        std::cout << "Any : Condition true empty" << std::endl;
-        {
-            auto n_A2_ = From(empty).Any([](const auto& elm) {return elm == 2; });
-            switch (target) {
-            //case target::sequence   :
-            //case target::array    : 
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkBool(n_A2_, false)); break;
-            }
-        }
-
-        std::cout << "Any : Condition false" << std::endl;
-        {
-            auto n_A3 = From(cont).Any([](const auto& elm) {return elm == 31; });
-            switch (target) {
-            //case container_type::sequence   :
-            //case container_type::array    : 
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkBool(n_A3, false)); break;
-            }
-        }
-
-        std::cout << "All : Condition true " << std::endl;
-        {
-            auto n_A2 = From(cont).All([](const auto& elm) {return elm > 0; });
-            switch (target) {
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            case container_type::sequence   :
-            case container_type::array    :
-            default: assert(checkBool(n_A2, true)); break;
-            }
-        }
-
-        std::cout << "All : Condition true empty" << std::endl;
-        {
-            auto n_A2_ = From(empty).All([](const auto& elm) {return elm > 0; });
-            switch (target) {
-            case container_type::array      : assert(checkBool(n_A2_, false)); break;
-            case container_type::unique     :
-            case container_type::hash_unique:
-            case container_type::multi      :
-            case container_type::hash_multi :
-            case container_type::sequence   :
-            default                         : assert(checkBool(n_A2_, true)); break;
-            }
-        }
-
-        std::cout << "All : Condition false" << std::endl;
-        {
-            auto n_A3 = From(cont).All([](const auto& elm) {return elm < 0; });
-            switch (target) {
-            //case target::sequence   :
-            //case target::array    : 
-            case container_type::unique:
-            case container_type::hash_unique:
-            case container_type::multi:
-            case container_type::hash_multi:
-            default: assert(checkBool(n_A3, false)); break;
-            }
-        }
-    }
-
-    template <typename TContainer>
     inline void RunTestFirstLast(TContainer& cont, std::string label, container_type target) {
         using val_type = typename TContainer::value_type;
 
-        std::cout << "FirstOrDefault : no condition" << std::endl;
-        auto n_1 = From(cont).FirstOrDefault();
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkValue(n_1, *std::begin(cont))); break;
+        {
+            std::cout << "FirstOrDefault : no condition" << std::endl;
+            auto n_1 = From(cont).FirstOrDefault();
+            switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkValue(n_1, *std::begin(cont))); break;
+            }
         }
 
         TContainer empty{};
-        std::cout << "FirstOrDefault : no condition empty" << std::endl;
-        auto n_1_ = From(empty).FirstOrDefault();
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkValue(n_1_, val_type())); break;
+        {
+            std::cout << "FirstOrDefault : no condition empty" << std::endl;
+            auto n_1_ = From(empty).FirstOrDefault();
+            switch (target) {
+            //case target::sequence   :
+            //case target::array    : 
+            case container_type::unique:
+            case container_type::hash_unique:
+            case container_type::multi:
+            case container_type::hash_multi:
+            default: assert(checkValue(n_1_, val_type())); break;
+            }
         }
 
         std::cout << "FirstOrDefault : condition true" << std::endl;
@@ -823,72 +885,17 @@ namespace simple_test
         std::cout << "ElementAtOrDefault : condition false empty" << std::endl;
         auto n_8_ = From(empty).ElementAtOrDefault(10);
         switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
+        //case target::sequence         :
+        //case target::array            : 
+        case container_type::unique     :
         case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkValue(n_8_, val_type())); break;
+        case container_type::multi      :
+        case container_type::hash_multi :
+        default                         : assert(checkValue(n_8_, val_type())); break;
         }
 
         //auto n_H = From(cont).DefaultIfEmpty();
         //std::for_each(n_H.begin(), n_H.end(), [](auto one) {std::cout << one << std::endl; });
-    }
-
-    template <typename TContainer>
-    inline void RunTestReverse(TContainer& cont, std::string label, container_type target) {
-        std::cout << "reverse :" << std::endl;
-        auto n_1 = From(cont).Reverse();
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique: assert(checkArray(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
-        case container_type::hash_unique: assert(checkUnique(n_1, { 9,8,7,6,5,4,3,2,1 })); break;
-        case container_type::multi: assert(checkArray(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
-        case container_type::hash_multi: assert(checkUnique(n_1, { 9,8,8,7,6,5,5,4,3,3,2,2,1 })); break;
-        default: assert(checkArray(n_1, { 2,8,3,5,7,8,9,6,5,4,1,3,2 })); break;
-        }
-
-        TContainer empty{};
-        std::cout << "reverse : empty" << std::endl;
-        auto n_1_ = From(empty).Reverse();
-        switch (target) {
-        //case target::sequence   :
-        case container_type::array: assert(checkArray(n_1_, { 0,0,0,0,0,0,0,0,0,0,0,0,0 })); break;
-        case container_type::unique:
-        case container_type::hash_unique:
-        case container_type::multi:
-        case container_type::hash_multi:
-        default: assert(checkArray(n_1_, {})); break;
-        }
-    }
-
-    template <typename TContainer>
-    inline void RunTestDistinct(TContainer& cont, std::string label, container_type target) {
-        std::cout << "distinct : no condition" << std::endl;
-        auto n_1 = From(cont).Distinct();
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique: assert(checkArray(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::hash_unique: assert(checkUnique(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::multi: assert(checkArray(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::hash_multi: assert(checkUnique(n_1, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        default: assert(checkArray(n_1, { 2, 3, 1, 4, 5, 6, 9, 8, 7 })); break;
-        }
-
-        std::cout << "distinct : condition" << std::endl;
-        auto n_2 = From(cont).Distinct([](const auto& lhs, const auto& rhs) {return lhs > rhs; });
-        switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique: assert(checkArray(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::hash_unique: assert(checkUnique(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::multi: assert(checkArray(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        case container_type::hash_multi: assert(checkUnique(n_2, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })); break;
-        default: assert(checkArray(n_2, { 2, 3, 1, 4, 5, 6, 9, 8, 7 })); break;
-        }
     }
 
     template <typename TContainer>
