@@ -50,7 +50,8 @@ namespace macsignee {
                 //Enumerable::copy<decltype<TSource>::iterator,TDest>(move_itr(std::begin(source)), move_itr(std::end(source) >
                 Enumerable<TDest> dest;
                 //reserve(dest, count_(source));
-                dest.value.reserve(count_(source));
+                //dest.value.reserve(count_(source));
+                dest.reserve(count_(source));
                 std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value), std::forward<TFunction>(copyer));
                 return dest;
             };
@@ -63,6 +64,9 @@ namespace macsignee {
             }
 
         private:
+
+            template<bool condition, typename T = void>
+            using enable_if_type = typename std::enable_if<condition, T>::type;
             //----------------------------------------
             // utilities
             //template <class, class = void>
@@ -155,6 +159,13 @@ namespace macsignee {
             static inline auto reserve_(TData& container, size_t size) {
                 //container.reserve(size);
             }
+
+        public:
+            auto reserve(std::size_t size) {
+                reserve_(value, size);
+            }
+
+        private:
 
             template<typename TItr>
             static inline auto move_itr(TItr itr) { return std::make_move_iterator(itr); }
@@ -1246,7 +1257,8 @@ namespace macsignee {
                 auto itr_s = std::cbegin(another);
                 using tup_type = std::tuple<Value_Type<value_type>, val_impl<typename TSecond::value_type>::type>;
                 Enumerable<std::vector<tup_type>> dest;
-                reserve_(dest.value, Count() < count_(another) ? Count() : count_(another));
+                //reserve_(dest.value, Count() < count_(another) ? Count() : count_(another));
+                dest.reserve(Count() < count_(another) ? Count() : count_(another));
                 for (; itr_f != move_itr(std::end(value)) && itr_s != std::end(another); ++itr_f, ++itr_s) {
                     dest.value.emplace_back(std::make_tuple(*itr_f, *itr_s));
                 }
@@ -1283,7 +1295,8 @@ namespace macsignee {
                 static_assert(std::is_same_v<key_type, decltype(getOuterKey(typename TInner::value_type()))>, "key type mismatch");
 
                 Enumerable<std::vector<dest_type>> dest;
-                reserve_(dest.value, Count() + count_(inner));
+                //reserve_(dest.value, Count() + count_(inner));
+                dest.reserve(Count() + count_(inner));
                 std::multimap<key_type, decltype(std::cbegin(inner))> outerKeys(std::forward<TComparer>(comparer));
 
                 auto itr_o = std::cbegin(inner);
@@ -1400,37 +1413,51 @@ namespace macsignee {
                 return to_list(std::move(value));
             }
 
-            template <typename TGetKey, typename TGetValue>
-            auto ToDictionary(TGetKey&& getKey, TGetValue&& getValue)&& {
-                using key_type = decltype(getKey(std::declval<value_type>()));
-                using val_type = decltype(getValue(std::declval<value_type>()));
+            // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
+            // 指定されたキー セレクター関数および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
+            // 指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            template <typename TGetKey, typename TGetValue, typename TComparer>
+            auto ToDictionary(TGetKey&& keySelector, TGetValue&& elementSelector, TComparer&& comparer = std::less<decltype(keySelector(std::declval<value_type>()))>) {
+                assert(false);
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                using val_type = decltype(elementSelector(std::declval<value_type>()));
                 std::unordered_map<key_type, val_type> result(count_(value));
-                for (auto elm : value) {
-                    result.emplace(getKey(elm), getValue(elm));
-                }
-                result.size_to_fit();
+                //for (auto elm : value) {
+                //    result.emplace(getKey(elm), getValue(elm));
+                //}
+                //result.size_to_fit();
                 return result;
             }
 
-            // TO DO:
-            // ToDictionary<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
-            // 指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
-            //template <typename TKey
-            //auto ToDictionary<TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
-            // TO DO:
             // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
             // 指定されたキー セレクター関数に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
-            // TO DO:
-            // ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
-            // 指定されたキー セレクター関数およびキーの比較子に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            //// ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
+            //// 指定されたキー セレクター関数およびキーの比較子に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
+            template <typename TGetKey, typename TComparer>
+            auto ToDictionary(TGetKey&& keySelector, TComparer&& comaprer = std::less<decltype(keySelector(std::declval<value_type>()))>) {
+                assert(false);
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                std::unordered_map<key_type, Value_Type<value_type>> result(count_(value));
+                //for (auto elm : value) {
+                //    result.emplace(getKey(elm), getValue(elm));
+                //}
+                //result.size_to_fit();
+                return result;
+            }
 
+            // no test
             auto ToHashSet() {
                 return std::unordered_set<value_type>(move_itr(std::begin(value)), move_itr(std::end(value)));
             }
 
-            // TO DO:
+            // no impl
             // ToHashSet<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
             // comparer を使用して IEnumerable<T>から HashSet<T> を作成し、キーを比較します。
+            template <typename TComparer>
+            auto ToHashSet(TComparer&& comaprer) {
+                assert(false);
+            }
 
             // TO DO:
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
@@ -1567,6 +1594,14 @@ namespace macsignee {
 #else
             // ------------------------------------------------------------------------------------------------
             // no impl
+            template <typename T>
+            struct nullable
+            {
+            private:
+                bool isNull = false;
+                T value{};
+            public:
+            };
 
             // First<TSource>(IEnumerable<TSource>)
             auto First() const {
