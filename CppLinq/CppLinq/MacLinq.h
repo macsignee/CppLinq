@@ -1179,9 +1179,9 @@ namespace macsignee {
             // another container will be into vector
             // multimap, unordered_multimap, multiset, unordered_multiset
             // Concat<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            template <class TOther>
-            auto Concat(const TOther& second) {
-                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TOther::value_type>>, "cannnot concatinate ");
+            template <class TSecond>
+            auto Concat(const TSecond& second) {
+                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TSecond::value_type>>, "cannnot concatinate ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + count_(second));
                 std::copy(move_itr(std::begin(value)), move_itr(std::end(value)), inserter_(result.value));
                 std::copy(move_itr(std::begin(second)), move_itr(std::end(second)), inserter_(result.value));
@@ -1189,17 +1189,18 @@ namespace macsignee {
                 return result;
             }
 
-            template <class TOther>
-            auto Concat(const Enumerable<TOther>& another) {
-                return Concat(another.value);
+            template <class TSecond>
+            auto Concat(const Enumerable<TSecond>& second) {
+                return Concat(second.value);
             }
 
             // Union<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
             // Union<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            template <class TOther>
-            auto Union(const TOther& second,
-                std::function<bool(const value_type&, const value_type&)> comparer = std::less<Value_Type<value_type>>()) {
-                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TOther::value_type>>, "cannnot union ");
+            using union_coparer = std::function<bool(const value_type&, const value_type&)>;
+
+            template <class TSecond>
+            auto Union(const TSecond& second, union_coparer comparer = std::less<Value_Type<value_type>>()) {
+                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TSecond::value_type>>, "cannnot union ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + count_(second));
                 std::set<value_type, decltype(comparer)> temp(comparer);
                 for (auto elm : value)if (temp.find(elm) == temp.end()) { temp.insert(elm); result.value.emplace_back(elm); }
@@ -1208,15 +1209,15 @@ namespace macsignee {
                 return result;
             }
 
-            template <class TOther>
-            auto Union(const Enumerable<TOther>& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<Value_Type<value_type>>()) {
-                return Union(another.value, predicate);
+            template <class TSecond>
+            auto Union(const Enumerable<TSecond>& second, union_coparer predicate = std::less<Value_Type<value_type>>()) {
+                return Union(second.value, predicate);
             }
 
             // Intersect<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
-            template <class TOther>
-            auto Intersect(const TOther& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
-                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TOther::value_type>>, "cannnot intersect ");
+            template <class TSecond>
+            auto Intersect(const TSecond& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
+                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TSecond::value_type>>, "cannnot intersect ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + count_(second));
                 std::set<value_type, decltype(comparer)> temp(comparer);
                 for (auto elm : value) if (temp.find(elm) == temp.end()) { temp.insert(elm); }
@@ -1226,16 +1227,16 @@ namespace macsignee {
             }
 
             // Intersect<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            template <class TOther>
-            auto Interesect(const Enumerable<TOther>& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
+            template <class TSecond>
+            auto Interesect(const Enumerable<TSecond>& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
                 return Interesect(second.value, comparer);
             }
 
             // Except<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
             // Except<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            template <class TOther>
-            auto Except(const TOther& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>) {
-                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TOther::value_type>>, "cannnot except ");
+            template <class TSecond>
+            auto Except(const TSecond& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>) {
+                static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TSecond::value_type>>, "cannnot except ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + count_(second));
                 std::set<value_type, decltype(comparer)> temp(comparer);
                 for (auto elm : second) temp.insert(elm);
@@ -1245,9 +1246,9 @@ namespace macsignee {
                 return result;
             }
 
-            template <class TOther>
-            auto Except(const Enumerable<TOther>& another, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
-                return Except(another.value, predicate);
+            template <class TSecond>
+            auto Except(const Enumerable<TSecond>& second, std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
+                return Except(second.value, predicate);
             }
 
             // Zip<TFirst,TSecond>(IEnumerable<TFirst>, IEnumerable<TSecond>)
@@ -1278,13 +1279,13 @@ namespace macsignee {
                 return  dest;
             }
 
-            template <class TOther>
-            auto Zip(const Enumerable<TOther>& second) {
+            template <class TSecond>
+            auto Zip(const Enumerable<TSecond>& second) {
                 return Zip(second.value);
             }
 
-            template <class TOther, typename TResultSelector>
-            auto Zip(const Enumerable<TOther>& second, TResultSelector&& resultSelector) {
+            template <class TSecond, typename TResultSelector>
+            auto Zip(const Enumerable<TSecond>& second, TResultSelector&& resultSelector) {
                 return Zip(second.value, resultSelector);
             }
             // Join<TOuter, TInner, TKey, TResult>(IEnumerable<TOuter>, IEnumerable<TInner>, Func<TOuter, TKey>, Func<TInner, TKey>, Func<TOuter, TInner, TResult>, IEqualityComparer<TKey>)
@@ -1435,7 +1436,7 @@ namespace macsignee {
             //// ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             //// 指定されたキー セレクター関数およびキーの比較子に従って、Dictionary<TKey, TValue> から IEnumerable<T> を作成します。
             template <typename TGetKey, typename TComparer>
-            auto ToDictionary(TGetKey&& keySelector, TComparer&& comaprer = std::less<decltype(keySelector(std::declval<value_type>()))>) {
+            auto ToDictionary(TGetKey&& keySelector, TComparer&& comaprer = [](const decltype(keySelector(std::declval<value_type>()))& lhs, const decltype(keySelector(std::declval<value_type>()))& rhs) { return lhs == rhs; }) {
                 assert(false);
                 using key_type = decltype(keySelector(std::declval<value_type>()));
                 std::unordered_map<key_type, Value_Type<value_type>> result(count_(value));
@@ -1459,18 +1460,41 @@ namespace macsignee {
                 assert(false);
             }
 
-            // TO DO:
-            // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
-            // 指定されたキー セレクター関数および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
-            // TO DO:
             // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>, IEqualityComparer<TKey>)
             // 指定されたキー セレクター関数、比較子、および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
-            // TO DO:
-            // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
-            // 指定されたキー セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            template <typename TGetKey, typename TGetElement>
+            auto  ToLookup(TGetKey&& keySelector, TGetElement&& elementSelector, 
+                std::function<bool(const decltype(keySelector(std::declval<value_type>()))& , 
+                   const decltype(keySelector(std::declval<value_type>()))&)> comaprer) {
+                assert(false);
+            }
+
+            // ToLookup<TSource, TKey, TElement>(IEnumerable<TSource>, Func<TSource, TKey>, Func<TSource, TElement>)
+            // 指定されたキー セレクター関数および要素セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            template <typename TGetKey, typename TGetElement>
+            auto  ToLookup(TGetKey&& keySelector, TGetElement&& elementSelector) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                return ToLookup(std::forward<TGetKey>(keySelector), std::forward<TGetElement>(elementSelector),
+                                [](const key_type& lhs, const key_type& rhs) {return lhs == rhs; });
+            }
             // TO DO:
             // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IEqualityComparer<TKey>)
             // 指定されたキー セレクター関数およびキーの比較子に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            template <typename TGetKey>
+            auto ToLookup(TGetKey&& keySelector) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                return ToLookup(std::forward<TGetKey>(keySelector), [](const key_type& lhs, const key_type& rhs) {return lhs == rhs; });
+            }
+
+            // TO DO:
+            // ToLookup<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
+            // 指定されたキー セレクター関数に従って、Lookup<TKey, TElement> から IEnumerable<T> を作成します。
+            //template <typename TGetKey, typename TComparer>
+            //auto  ToLookup(TGetKey&& keySelector, TComparer&& comaprer) {
+            //    using key_type = decltype(keySelector(std::declval<value_type>()));
+            //    return ToLookup(std::forward<TGetKey>(keySelector), [](const value_type& elm) {return elm; },
+            //        std::forward<TComparer>(comaprer));
+            //}
 
             template <typename TChar>
             auto ToString(std::function<const std::basic_string<TChar>(const value_type&)> converter) {
