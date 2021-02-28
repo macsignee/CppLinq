@@ -953,18 +953,44 @@ namespace macsignee {
         private:
             //-------------------
             // distinct
-            template <class TSource, class TDest>
+            template <typename T>
+            struct has_emplace_back {
+            private:
+                template <typename U, int = (&U::emplace_back, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            template <typename T>
+            struct has_emplace {
+            private:
+                template <typename U, int = (&U::emplace, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            // distinct
+            template <class TSource, class TDest, std::enable_if_t<has_emplace_back<TDest>::value, bool> = true>
             static void copy_distinct(TSource&& source, TDest& dest, std::function<bool(const typename TSource::value_type&, const typename TSource::value_type&)> predicate) {
                 std::set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : source) if (temp.find(elm) == temp.end()) { temp.insert(elm); dest.emplace_back(elm); }
             }
 
-            // distinct
-            template <class TSource, class TDest>
-            static void copy_distinct_s(TSource&& source, TDest& dest, std::function<bool(const typename TSource::value_type&, const typename TSource::value_type&)> predicate) {
+            template <class TSource, class TDest, std::enable_if_t<!has_emplace_back<TDest>::value && has_emplace<TDest>::value, bool> = true>
+            static void copy_distinct(TSource&& source, TDest& dest, std::function<bool(const typename TSource::value_type&, const typename TSource::value_type&)> predicate) {
                 std::set<value_type, decltype(predicate)> temp(predicate);
                 for (auto elm : source) if (temp.find(elm) == temp.end()) { temp.insert(elm); dest.emplace(elm); }
             }
+                
+            template <class TSource, class TDest, std::enable_if_t<!has_emplace_back<TDest>::value && !has_emplace<TDest>::value, bool> = true>
+            static void copy_distinct(TSource&& source, TDest& dest, std::function<bool(const typename TSource::value_type&, const typename TSource::value_type&)> predicate) {
+                assert(false);
+            }
+
 
             template <class TSource>
             struct distinct_impl
@@ -972,17 +998,7 @@ namespace macsignee {
                 using val_type = typename Value_Type<typename TSource::value_type>;
                 auto operator()(TSource&& source, std::function<bool(const val_type&, const val_type&)> predicate) {
                     Enumerable<TContainer> dest;
-                    copy_distinct(std::forward<TContainer>(source), dest.value, predicate);
-                    return dest;
-                }
-            };
-
-            template <typename T, typename TAllocator>
-            struct distinct_impl<std::deque<T, TAllocator>>
-            {
-                auto operator()(std::deque<T, TAllocator>&& source, std::function<bool(const T&, const T&)> predicate) {
-                    Enumerable<std::deque<T, TAllocator>> dest;
-                    copy_distinct(std::forward<std::deque<T, TAllocator>>(source), dest.value, predicate);
+                    copy_distinct(std::forward<TContainer>(source), dest.value, std::forward<std::function<bool(const val_type&, const val_type&)> >(predicate));
                     return dest;
                 }
             };
@@ -999,57 +1015,15 @@ namespace macsignee {
             };
 
             template <typename T, typename TComperer, typename TAllocator>
-            struct distinct_impl<std::multiset<T, TComperer, TAllocator>> {
-                using cont_type = typename std::multiset<T, TComperer, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, const T&)> comparer) {
-                    Enumerable<cont_type> dest;
-                    copy_distinct_s(std::forward<cont_type>(source), dest.value, comparer);
-                    return dest;
-                }
-            };
-
-            template <typename T, typename THash, typename TComperer, typename TAllocator>
-            struct distinct_impl<std::unordered_multiset<T, THash, TComperer, TAllocator>> {
-                using cont_type = typename std::unordered_multiset<T, THash, TComperer, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, const T&)> comparer) {
-                    Enumerable<cont_type> dest;
-                    copy_distinct_s(std::forward<cont_type>(source), dest.value, comparer);
-                    return dest;
-                }
-            };
-
-            template <typename TKey, typename TValue, typename TComperer, typename TAllocator>
-            struct distinct_impl<std::multimap<TKey, TValue, TComperer, TAllocator>> {
-                using cont_type = typename std::map<TKey, TValue, TComperer, TAllocator>;
-                using val_type = typename cont_type::value_type;
-                auto operator()(cont_type&& source, std::function<bool(const Value_Type<val_type>&, const Value_Type<val_type>&)> comparer) {
-                    Enumerable<cont_type> dest;
-                    copy_distinct_s(std::forward<cont_type>(source), dest.value, comparer);
-                    return dest;
-                }
-            };
-
-            template <typename TKey, typename TValue, typename THash, typename TComperer, typename TAllocator>
-            struct distinct_impl<std::unordered_multimap<TKey, TValue, THash, TComperer, TAllocator>> {
-                using cont_type = typename std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>;
-                using val_type = typename cont_type::value_type;
-                auto operator()(cont_type&& source, std::function<bool(const Value_Type<val_type>&, const Value_Type<val_type>&)> comparer) {
-                    Enumerable<cont_type> dest;
-                    copy_distinct_s(std::forward<cont_type>(source), dest.value, comparer);
-                    return dest;
-                }
-            };
-
-            template <typename T, typename TComperer, typename TAllocator>
             struct distinct_impl<std::set<T, TComperer, TAllocator>> {
-                auto operator()(std::set<T, TComperer, TAllocator>&& source, std::function<bool(const T&, const T&)> comparer) {
+                auto operator()(std::set<T, TComperer, TAllocator>&& source, std::function<bool(const T&, const T&)> predicate) {
                     return Enumerable<std::set<T, TComperer, TAllocator>>(std::forward<std::set<T, TComperer, TAllocator>>(source));
                 }
             };
 
             template <typename T, typename THash, typename TComperer, typename TAllocator>
             struct distinct_impl<std::unordered_set<T, THash, TComperer, TAllocator>> {
-                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, std::function<bool(const T&, const T&)> comparer) {
+                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, std::function<bool(const T&, const T&)> predicate) {
                     return Enumerable<std::unordered_set<T, THash, TComperer, TAllocator>>(std::forward<std::unordered_set<T, THash, TComperer, TAllocator>>(source));
                 }
             };
@@ -1057,7 +1031,7 @@ namespace macsignee {
             template <typename TKey, typename TValue, typename TComperer, typename TAllocator>
             struct distinct_impl<std::map<TKey, TValue, TComperer, TAllocator>> {
                 using val_type = typename Value_Type<typename std::map<TKey, TValue, TComperer, TAllocator>::value_type>;
-                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, std::function<bool(const val_type&, const val_type&)> comparer) {
+                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, std::function<bool(const val_type&, const val_type&)> predicate) {
                     return Enumerable<std::map<TKey, TValue, TComperer, TAllocator>>(std::forward<std::map<TKey, TValue, TComperer, TAllocator>>(source));
                 }
             };
@@ -1090,9 +1064,9 @@ namespace macsignee {
             // Distinct<TSource>(IEnumerable<TSource>)
             // Distinct<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
             // 指定された IEqualityComparer<T> を使用して値を比較することにより、シーケンスから一意の要素を返します。
-            auto Distinct(std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
+            auto Distinct(std::function<bool(const value_type&, const value_type&)> predicate = std::less<value_type>()) {
                 auto distinct = distinct_impl<std::decay_t<decltype(value)>>();
-                return distinct(std::move(value), comparer);
+                return distinct(std::move(value), predicate);
             }
 
             // below container will be converted to vector if elements collision
