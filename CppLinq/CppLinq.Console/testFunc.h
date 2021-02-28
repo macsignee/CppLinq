@@ -458,7 +458,7 @@ namespace simple_test
         }
 
         std::cout << "distinct : condition" << std::endl;
-        auto n_2 = From(cont).Distinct([](const auto& lhs, const auto& rhs) {return lhs > rhs; });
+        auto n_2 = From(cont).Distinct([](const auto& lhs, const auto& rhs) {return lhs == rhs; });
         switch (target) {
             //case target::sequence   :
             //case target::array    : 
