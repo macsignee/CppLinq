@@ -118,18 +118,14 @@ namespace macsignee {
         class Enumerable
         {
         private:
-            template <typename T>
-            using sorter_fn_type   = std::function<bool(const T&, const T&)>;
-            template <typename T>
+            template <typename T>   // predicate function type
             using pred_fn_type     = std::function<bool(const T&)>;
-            template <typename T>
+            template <typename T>   // predicate with index function type
             using pred_idx_fn_type = std::function<bool(const T&, std::size_t)>;
-            template <typename T>
+            template <typename T>   // equal compare function type
             using eq_comp_fn_type  = std::function<bool(const T&, const T&)>;
-            template <typename T>
+            template <typename T>   // less than compare function type
             using ls_comp_fn_type  = std::function<bool(const T&, const T&)>;
-            template <typename T>
-            using gr_comp_fn_type  = std::function<bool(const T&, const T&)>;
         public:
             //-------------------------------------
             // attributes
@@ -260,11 +256,11 @@ namespace macsignee {
                 //container.reserve(size);
             }
 
-            template <typename TSrc>
+            template <typename T>
             struct EqualityComparer
             {
             private:
-                using val_type = Value_Type<TSrc>;
+                using val_type = Value_Type<T>;
                 eq_comp_fn_type<val_type> comparer;
                 std::unordered_set<val_type> work{};
             public:
@@ -273,9 +269,9 @@ namespace macsignee {
                     add_if_not_found = 1,
                     remeove_if_found = 2
                 };
-                EqualityComparer(eq_comp_fn_type<val_type>&& cmp) : comparer(cmp) {}
+                EqualityComparer(eq_comp_fn_type<val_type>&& cmp) : comparer(std::forward<eq_comp_fn_type<val_type>>(cmp)) {}
 
-                bool equals(TSrc& value, then action = do_nothing) {
+                bool equals(T& value, then action = do_nothing) {
                     auto first = std::begin(work);
                     auto last = std::end(work);
                     for (; first != last; ++first)
@@ -289,16 +285,6 @@ namespace macsignee {
                     return false; 
                 }
             };
-
-            template <class TTemp>
-            static bool compare_equal(const TTemp& temp, const typename TTemp::value_type& value, eq_comp_fn_type<typename TTemp::value_type> comparer) {
-                auto first = std::begin(temp);
-                auto last  = std::begin(temp);
-                for (; first != last; ++first)
-                    if (comparer(*first, value)) return true;
-                return false;
-            }
-
 #pragma region contructors and so
         public:
             //-------------------------------------
@@ -330,10 +316,10 @@ namespace macsignee {
             auto cend() { return std::cend(value); }
 
 #pragma endregion
-        private:
             //-------------------
             // where / where with index 
 #pragma region where / where with index implementation
+        private:
             template <typename T>
             struct has_sort {
             private:
@@ -472,7 +458,7 @@ namespace macsignee {
             template <class TSource>
             struct where_index_impl
             {
-                auto operator()(TSource&& source, std::function<bool(const typename TSource::value_type&, std::size_t)>  predicate) {
+                auto operator()(TSource&& source, pred_idx_fn_type<typename TSource::value_type>&& predicate) {
                     return copy_filtered_index<TSource>(std::forward<TSource>(source), predicate);
                 }
             };
@@ -481,7 +467,7 @@ namespace macsignee {
             struct where_index_impl<std::vector<T, TAllocator>>
             {
                 using cont_type = typename std::vector<T, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const typename T&, std::size_t)> predicate) {
+                auto operator()(cont_type&& source, pred_idx_fn_type<T>&& predicate) {
                     return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), std::size(source), predicate);
                 }
             };
@@ -490,7 +476,7 @@ namespace macsignee {
             struct where_index_impl<std::forward_list<T, TAllocator>>
             {
                 using cont_type = typename std::forward_list<T, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, std::size_t)> predicate) {
+                auto operator()(cont_type&& source, pred_idx_fn_type<T>&& predicate) {
                     return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), size_(source), predicate);
                 }
             };
@@ -499,7 +485,7 @@ namespace macsignee {
             struct where_index_impl<std::array<T, N>>
             {
                 using cont_type = typename std::array<T, N>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, std::size_t index)> predicate) {
+                auto operator()(cont_type&& source, pred_idx_fn_type<T>&& predicate) {
                     return filter_copy_toV_index<cont_type, T>(std::forward<cont_type>(source), N, predicate);
                 }
             };
@@ -512,14 +498,14 @@ namespace macsignee {
             }
 
             // Where<TSource>(IEnumerable<TSource>, Func<TSource,Int32,Boolean>)
-            auto Where(std::function<bool(const value_type&, std::size_t)> predicate) {
+            auto Where(pred_idx_fn_type<value_type>&& predicate) {
                 auto where = where_index_impl<std::decay_t<decltype(value)>>();
-                return where(std::move(value), predicate);
+                return where(std::move(value), std::forward<pred_idx_fn_type<value_type> >(predicate));
             }
 
-            auto SortBy(std::function<bool(const value_type&, const value_type&)> predicate) {
+            auto SortBy(ls_comp_fn_type<value_type>&& predicate) {
                 auto sort_by = sort_by_impl<std::decay_t<decltype(value)>>();
-                return sort_by(std::move(value), predicate);
+                return sort_by(std::move(value), std::forward<ls_comp_fn_type<value_type> >(predicate));
             }
         private:
             //-------------------
@@ -573,7 +559,7 @@ namespace macsignee {
             //-------------------
             // sort_by
             template <class TSource, typename T>
-            static auto copy_sort_to_v(TSource&& source, std::function<bool(const T&, const T&)> sorter) {
+            static auto copy_sort_to_v(TSource&& source, ls_comp_fn_type<T>&& sorter) {
                 auto dest = Enumerable::CreateVectorEnumerable<T, TSource>(std::forward<TSource>(source));
                 sort_(dest.value, sorter);
                 return dest;
@@ -583,8 +569,8 @@ namespace macsignee {
             struct sort_by_impl
             {
                 using val_type = typename TSource::value_type;
-                auto operator()(TSource&& source, std::function<bool(const val_type&, const val_type&)> sorter) {
-                    return copy_sort_to_v<TSource, Value_Type<val_type>>(std::forward<TSource>(source), sorter);
+                auto operator()(TSource&& source, ls_comp_fn_type<val_type>&& sorter) {
+                    return copy_sort_to_v<TSource, Value_Type<val_type>>(std::forward<TSource>(source), std::forward<ls_comp_fn_type<val_type> >(sorter));
                 }
             };
 
@@ -592,7 +578,7 @@ namespace macsignee {
             struct sort_by_impl<std::deque<T, TAllocator>>
             {
                 using cont_type = typename std::deque<T, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, const T&)> sorter) {
+                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
                     sort_(dest.value, sorter);
                     return dest;
@@ -603,7 +589,7 @@ namespace macsignee {
             struct sort_by_impl<std::list<T, TAllocator>>
             {
                 using cont_type = typename std::list<T, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, const T&)> sorter) {
+                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
                     sort_(dest.value, sorter);
                     return dest;
@@ -614,7 +600,7 @@ namespace macsignee {
             struct sort_by_impl<std::forward_list<T, TAllocator>>
             {
                 using cont_type = typename std::forward_list<T, TAllocator>;
-                auto operator()(cont_type&& source, std::function<bool(const T&, const T&)> sorter) {
+                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
                     sort_(dest.value, sorter);
                     return dest;
@@ -765,7 +751,7 @@ namespace macsignee {
 
             // no test
             // SkipWhile<TSource>(IEnumerable<TSource>, Func<TSource,Boolean>)
-            auto SkipWhile(std::function<bool(value_type)> predicate) {
+            auto SkipWhile(pred_fn_type<value_type>&& predicate) {
                 Enumerable<TContainer> result;
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (!predicate(elm)) result.value.emplace_back(elm);
@@ -775,7 +761,7 @@ namespace macsignee {
 
             // no test
             // SkipWhile<TSource>(IEnumerable<TSource>, Func<TSource,Int32,Boolean>)
-            auto SkipWhile(std::function<bool(value_type, size_t)> predicate) {
+            auto SkipWhile(pred_idx_fn_type<value_type>&& predicate) {
                 Enumerable<TContainer> result;
                 size_t index = 0;
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
@@ -821,10 +807,10 @@ namespace macsignee {
                 auto take = take_impl<std::decay_t<decltype(value)>>();
                 return take(std::move(value), count);
             }
-
+ 
             // no test
             // TakeWhile<TSource>(IEnumerable<TSource>, Func<TSource, Boolean>)
-            auto TakeWhile(std::function<bool(value_type)> predicate) {
+            auto TakeWhile(pred_fn_type<value_type>&& predicate) {
                 Enumerable<TContainer> result;
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
                     if (predicate(elm))
@@ -833,9 +819,9 @@ namespace macsignee {
                 return result;
             }
 
-            // no test
+          // no test
             // TakeWhile<TSource>(IEnumerable<TSource>, Func<TSource,Int32,Boolean>)
-            auto TakeWhile(std::function<bool(value_type, size_t)> predicate) {
+            auto TakeWhile(pred_idx_fn_type<value_type>&& predicate) {
                 Enumerable<TContainer> result;
                 size_t index = 0;
                 std::for_each(move_itr(std::begin(value)), move_itr(std::end(value)), [&](const auto& elm) {
@@ -1154,7 +1140,6 @@ namespace macsignee {
         public:
             // Distinct<TSource>(IEnumerable<TSource>)
             // Distinct<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
-            // 指定された IEqualityComparer<T> を使用して値を比較することにより、シーケンスから一意の要素を返します。
             auto Distinct(eq_comp_fn_type<value_type>&& comparer = nullptr) {
                 auto distinct = distinct_impl<std::decay_t<decltype(value)>>();
                 return distinct(std::move(value), std::forward<eq_comp_fn_type<value_type> >(comparer));
