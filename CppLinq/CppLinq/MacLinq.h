@@ -117,21 +117,23 @@ namespace macsignee {
         template <class TContainer>
         class Enumerable
         {
-        private:
-            template <typename T>   // predicate function type
-            using pred_fn_type     = std::function<bool(const T&)>;
-            template <typename T>   // predicate with index function type
-            using pred_idx_fn_type = std::function<bool(const T&, std::size_t)>;
-            template <typename T>   // equal compare function type
-            using eq_comp_fn_type  = std::function<bool(const T&, const T&)>;
-            template <typename T>   // less than compare function type
-            using ls_comp_fn_type  = std::function<bool(const T&, const T&)>;
         public:
             //-------------------------------------
             // attributes
             using value_type = typename TContainer::value_type;
             TContainer value;
         private:
+            template <typename T>   // Func<TSource,Boolean> function type
+            using pred_fn_type     = std::function<bool(const T&)>;
+            template <typename T>   // Func<TSource,Int32,Boolean> function type
+            using pred_idx_fn_type = std::function<bool(const T&, std::size_t)>;
+            template <typename T>   // IEqualityComparer.Equals function type(Func<TSource,TSource,Boolean>)
+            using ieq_comp_fn_type = std::function<bool(const T&, const T&)>;
+            template <typename T>   // IComparer.Compare function type(Func<TSource,TSource,Int32>)
+            using icomp_fn_type    = std::function<int(const T&, const T&)>;
+            template <typename T>   // less than comparer(std::less) function type : IComparer.Compare(...) < 0 = true
+            using less_fn_type     = std::function<bool(const T&, const T&)>;
+
             template<typename T>
             struct val_impl {
                 using type = T;
@@ -144,27 +146,6 @@ namespace macsignee {
 
             template <typename T>
             using Value_Type = typename val_impl<T>::type;
-
-        public:
-            template <class TSource, class TDest, typename TFunction>
-            static auto transform(TSource&& source, TFunction&& copyer) {
-                //Enumerable::copy<decltype<TSource>::iterator,TDest>(move_itr(std::begin(source)), move_itr(std::end(source) >
-                //Enumerable<TDest> dest;
-                //reserve(dest, size_(source));
-                //dest.value.reserve(size_(source));
-                //dest.reserve(size_(source));
-                auto dest = Enumerable::Create<TDest>(size_(source));
-                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value), std::forward<TFunction>(copyer));
-                return dest;
-            };
-
-            template <typename TSrcItr, class TDest>
-            static auto copy_range(TSrcItr itrBegin, TSrcItr itrEnd) {
-                Enumerable<TDest> dest;
-                dest.value = { move_itr(itrBegin), move_itr(itrEnd) };
-                return dest;
-            }
-
         private:
             //----------------------------------------
             // utilities
@@ -261,7 +242,7 @@ namespace macsignee {
             {
             private:
                 using val_type = Value_Type<T>;
-                eq_comp_fn_type<val_type> comparer;
+                ieq_comp_fn_type<val_type> comparer;
                 std::unordered_set<val_type> work{};
             public:
                 enum then{
@@ -269,7 +250,7 @@ namespace macsignee {
                     add_if_not_found = 1,
                     remeove_if_found = 2
                 };
-                EqualityComparer(eq_comp_fn_type<val_type>&& cmp) : comparer(std::forward<eq_comp_fn_type<val_type>>(cmp)) {}
+                EqualityComparer(ieq_comp_fn_type<val_type>&& cmp) : comparer(std::forward<ieq_comp_fn_type<val_type>>(cmp)) {}
 
                 bool equals(T& value, then action = do_nothing) {
                     auto first = std::begin(work);
@@ -320,28 +301,6 @@ namespace macsignee {
             // where / where with index 
 #pragma region where / where with index implementation
         private:
-            template <typename T>
-            struct has_sort {
-            private:
-                template <typename U, int = (&U::sort, 0)>
-                static std::true_type test(U*);
-                static std::false_type test(...);
-            public:
-                static constexpr bool value = decltype(test((T*)nullptr))::value;
-            };
-
-            template <typename TData, std::enable_if_t<has_sort<TData>::value, bool> = true>
-            static inline auto sort_(TData& source,
-                std::function<bool(const typename TData::value_type&, const typename TData::value_type&)> sorter) {
-                source.sort(sorter);
-            }
-
-            template <typename TData, std::enable_if_t<!has_sort<TData>::value, bool> = true>
-            static inline auto sort_(TData& source,
-                std::function<bool(const typename TData::value_type&, const typename TData::value_type&)> sorter) {
-                std::sort(std::begin(source), std::end(source), sorter);
-            }
-
             template <class TSource, typename T>
             static auto copy_filtered_v(TSource&& source, pred_fn_type<T>&& predicate) {
                 Enumerable<TSource> dest(std::forward<TSource>(source));
@@ -385,6 +344,7 @@ namespace macsignee {
                 dest.value.shrink_to_fit();
                 return dest;
             }
+
             template <class TSource>
             struct where_impl
             {
@@ -502,163 +462,160 @@ namespace macsignee {
                 auto where = where_index_impl<std::decay_t<decltype(value)>>();
                 return where(std::move(value), std::forward<pred_idx_fn_type<value_type> >(predicate));
             }
-
-            auto SortBy(ls_comp_fn_type<value_type>&& predicate) {
-                auto sort_by = sort_by_impl<std::decay_t<decltype(value)>>();
-                return sort_by(std::move(value), std::forward<ls_comp_fn_type<value_type> >(predicate));
-            }
+            //-------------------
+            // order by
+            // sort by
+#pragma region order by implementation
         private:
+            template <typename T>
+            struct has_sort {
+            private:
+                template <typename U, int = (&U::sort, 0)>
+                static std::true_type test(U*);
+                static std::false_type test(...);
+            public:
+                static constexpr bool value = decltype(test((T*)nullptr))::value;
+            };
+
+            template <typename TData, std::enable_if_t<has_sort<TData>::value, bool> = true>
+            static inline auto sort_(TData& source,
+                std::function<bool(const typename TData::value_type&, const typename TData::value_type&)> sorter) {
+                source.sort(sorter);
+            }
+
+            template <typename TData, std::enable_if_t<!has_sort<TData>::value, bool> = true>
+            static inline auto sort_(TData& source,
+                std::function<bool(const typename TData::value_type&, const typename TData::value_type&)> sorter) {
+                std::sort(std::begin(source), std::end(source), sorter);
+            }
             //-------------------
             // order_by
-#pragma region order by implementation
-            template <class TSource, typename TGenKey, typename TComparer>
-            struct order_by_impl
+            template <class TSource, typename TKey>
+            struct sort_impl
             {
                 using val_type = typename Value_Type<typename TSource::value_type>;
-                auto operator()(TSource&& source, TGenKey&& genKey, TComparer&& comparer) {
-                    auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
-                    return copy_sort_to_v<TSource, Value_Type<val_type>>(std::forward<TSource>(source), compare_key);
+                auto operator()(TSource&& source, less_fn_type<TKey>&& less_comparer) {
+                    auto dest = Enumerable::CreateVectorEnumerable<Value_Type<val_type>, TSource>(std::forward<TSource>(source));
+                    sort_(dest.value, less_comparer);
+                    return dest;
                 }
             };
 
-            template <typename T, typename TAllocator, typename TGenKey, typename TComparer>
-            struct order_by_impl<std::deque<T, TAllocator>, TGenKey, TComparer>
+            template <typename T, typename TAllocator, typename TKey>
+            struct sort_impl<std::deque<T, TAllocator>, TKey>
             {
                 using cont_type = typename std::deque<T, TAllocator>;
-                auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
+                auto operator()(cont_type&& source, less_fn_type<TKey>&& less_comparer) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
-                    sort_(dest.value, compare_key);
+                    sort_(dest.value, less_comparer);
                     return dest;
                 }
             };
-            template <typename T, typename TAllocator, typename TGenKey, typename TComparer>
-            struct order_by_impl<std::list<T, TAllocator>, TGenKey, TComparer>
+
+            template <typename T, typename TAllocator, typename TKey>
+            struct sort_impl<std::list<T, TAllocator>, TKey>
             {
                 using cont_type = typename std::list<T, TAllocator>;
-                auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
-                    auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
+                auto operator()(cont_type&& source, less_fn_type<TKey>&& less_comparer) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_(dest.value, compare_key);
+                    sort_(dest.value, less_comparer);
                     return dest;
                 }
             };
 
-            template <typename T, typename TAllocator, typename TGenKey, typename TComparer>
-            struct order_by_impl<std::forward_list<T, TAllocator>, TGenKey, TComparer>
+            template <typename T, typename TAllocator, typename TKey>
+            struct sort_impl<std::forward_list<T, TAllocator>, TKey>
             {
                 using cont_type = typename std::forward_list<T, TAllocator>;
-                auto operator()(cont_type&& source, TGenKey&& genKey, TComparer&& comparer) {
-                    auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(genKey(lhs), genKey(rhs)); };
+                auto operator()(cont_type&& source, less_fn_type<TKey>&& less_comparer) {
                     Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_(dest.value, compare_key);
+                    sort_(dest.value, less_comparer);
                     return dest;
                 }
             };
 
-            //-------------------
-            // sort_by
-            template <class TSource, typename T>
-            static auto copy_sort_to_v(TSource&& source, ls_comp_fn_type<T>&& sorter) {
-                auto dest = Enumerable::CreateVectorEnumerable<T, TSource>(std::forward<TSource>(source));
-                sort_(dest.value, sorter);
-                return dest;
-            }
-
-            template <class TSource>
-            struct sort_by_impl
-            {
-                using val_type = typename TSource::value_type;
-                auto operator()(TSource&& source, ls_comp_fn_type<val_type>&& sorter) {
-                    return copy_sort_to_v<TSource, Value_Type<val_type>>(std::forward<TSource>(source), std::forward<ls_comp_fn_type<val_type> >(sorter));
-                }
-            };
-
-            template <typename T, typename TAllocator>
-            struct sort_by_impl<std::deque<T, TAllocator>>
-            {
-                using cont_type = typename std::deque<T, TAllocator>;
-                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
-                    Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_(dest.value, sorter);
-                    return dest;
-                }
-            };
-
-            template <typename T, typename TAllocator>
-            struct sort_by_impl<std::list<T, TAllocator>>
-            {
-                using cont_type = typename std::list<T, TAllocator>;
-                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
-                    Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_(dest.value, sorter);
-                    return dest;
-                }
-            };
-
-            template <typename T, typename TAllocator>
-            struct sort_by_impl<std::forward_list<T, TAllocator>>
-            {
-                using cont_type = typename std::forward_list<T, TAllocator>;
-                auto operator()(cont_type&& source, ls_comp_fn_type<T>&& sorter) {
-                    Enumerable<cont_type> dest(std::forward<cont_type>(source));
-                    sort_(dest.value, sorter);
-                    return dest;
-                }
-            };
 #pragma endregion
         public:
-            // OrderBy<TSource,TKey>(IEnumerable<TSource>, Func<TSource,TKey>, IComparer<TKey>)	
-            template <typename TKey, typename TComparer>
-            auto OrderBy(TKey&& keySelector, TComparer&& comparer) {
-                auto order_by = order_by_impl<std::decay_t<decltype(value)>, TKey, TComparer>();
-                return order_by(std::move(value), std::forward<TKey>(keySelector), std::forward<TComparer>(comparer));
+            //#define
+            // comp_fn_type
+            template <typename TKeySelector>
+            auto OrderBy(TKeySelector&& keySelector, icomp_fn_type<decltype(keySelector(std::declval<value_type>()))>&& comparer) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(keySelector(lhs), keySelector(rhs)) < 0; };
+                auto order_by = sort_impl<std::decay_t<decltype(value)>, key_type>();
+                return order_by(std::move(value), compare_key);
             }
-
+            
             // OrderBy<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>)
-            template <typename TKey>
-            auto OrderBy(TKey&& keySelector) {
-                return OrderBy(std::forward<TKey>(keySelector), std::less<>());
+            template <typename TKeySelector>
+            auto OrderBy(TKeySelector&& keySelector) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                //auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(keySelector(lhs), keySelector(rhs)) < 0; };
+                auto order_by = sort_impl<std::decay_t<decltype(value)>, key_type>();
+                return order_by(std::move(value), std::less<key_type>());
             }
 
             // OrderByDescending<TSource,TKey>(IEnumerable<TSource>, Func<TSource,TKey>, IComparer<TKey>)
-            template <typename TKey, typename TComparer>
-            auto OrderByDescending(TKey&& keySelector, TComparer&& comparer) {
-                auto order_by = order_by_impl<std::decay_t<decltype(value)>, TKey, TComparer>();
-                return order_by(std::move(value), std::forward<TKey>(keySelector), std::forward<TComparer>(comparer));
+            template <typename TKeySelector>
+            auto OrderByDescending(TKeySelector&& keySelector, icomp_fn_type<decltype(keySelector(std::declval<value_type>()))>&& comparer) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(keySelector(lhs), keySelector(rhs)) > 0; };
+                auto order_by = sort_impl<std::decay_t<decltype(value)>, key_type>();
+                return order_by(std::move(value), compare_key);
             }
 
             // OrderByDescending<TSource,TKey>(IEnumerable<TSource>, Func<TSource,TKey>)
-            template <typename TKey>
-            auto OrderByDescending(TKey&& keySelector) {
-                return OrderBy(std::forward<TKey>(keySelector), std::greater<>());
+            template <typename TKeySelector>
+            auto OrderByDescending(TKeySelector&& keySelector) {
+                using key_type = decltype(keySelector(std::declval<value_type>()));
+                auto order_by = sort_impl<std::decay_t<decltype(value)>, key_type>();
+                return order_by(std::move(value), std::greater<key_type>());
             }
 
             // ThenBy<TSource, TKey>(IOrderedEnumerable<TSource>, Func<TSource, TKey>, IComparer<TKey>)
-            template <typename TKey, typename TComparer>
-            auto ThenBy(TKey&& keySelector, TComparer&& comparer) {
-                return OrderBy(keySelector, comparer);
+            template <typename TKeySelector>
+            auto ThenBy(TKeySelector&& keySelector, icomp_fn_type<decltype(keySelector(std::declval<value_type>()))>&& comparer) {
+                return OrderBy(std::forward<TKeySelector>(keySelector), comparer);
             }
 
             // ThenBy<TSource,TKey>(IOrderedEnumerable<TSource>, Func<TSource,TKey>)
-            template <typename TKey>
-            auto ThenBy(TKey&& keySelector) {
-                return OrderBy(std::forward<TKey>(keySelector), std::less<>());
+            template <typename TKeySelector>
+            auto ThenBy(TKeySelector&& keySelector) {
+                return OrderBy(std::forward<TKeySelector>(keySelector));
             }
 
             // ThenByDescending<TSource,TKey>(IOrderedEnumerable<TSource>, Func<TSource,TKey>, IComparer<TKey>)
-            template <typename TKey, typename TComparer>
-            auto ThenByDescending(TKey&& keySelector, TComparer&& comparer) {
-                return OrderByDescending(keySelector, comparer);
+            template <typename TKeySelector>
+            auto ThenByDescending(TKeySelector&& keySelector, icomp_fn_type<decltype(keySelector(std::declval<value_type>()))>&& comparer) {
+                return OrderByDescending(std::forward<TKeySelector>(keySelector), comparer);
             }
 
             // ThenByDescending<TSource,TKey>(IOrderedEnumerable<TSource>, Func<TSource,TKey>)
-            template <typename TKey>
-            auto ThenByDescending(TKey&& keySelector) {
-                return OrderByDescending(keySelector);
+            template <typename TKeySelector>
+            auto ThenByDescending(TKeySelector&& keySelector) {
+                return OrderByDescending(std::forward<TKeySelector>(keySelector));
             }
 
-            // select
+            auto SortBy(less_fn_type<value_type>&& predicate = std::less<value_type>) {
+                auto sort_by = sort_impl<std::decay_t<decltype(value)>, value_type>();
+                return sort_by(std::move(value), std::forward<less_fn_type<value_type> >(predicate));
+            }
+
+            //-------------------
+            // Select
+        private:
+            template <class TSource, class TDest, typename TFunction>
+            static auto transform(TSource&& source, TFunction&& copyer) {
+                //Enumerable::copy<decltype<TSource>::iterator,TDest>(move_itr(std::begin(source)), move_itr(std::end(source) >
+                //Enumerable<TDest> dest;
+                //reserve(dest, size_(source));
+                //dest.value.reserve(size_(source));
+                //dest.reserve(size_(source));
+                auto dest = Enumerable::Create<TDest>(size_(source));
+                std::transform(move_itr(std::begin(source)), move_itr(std::end(source)), inserter_(dest.value), std::forward<TFunction>(copyer));
+                return dest;
+            };
+        public:
             // Select<TSource,TResult>(IEnumerable<TSource>, Func<TSource,TResult>)
             template <typename TSelector>
             auto Select(TSelector selector) {
@@ -722,6 +679,13 @@ namespace macsignee {
             //-------------------
             // skip
 #pragma region skip implementation
+            template <typename TSrcItr, class TDest>
+            static auto copy_range(TSrcItr itrBegin, TSrcItr itrEnd) {
+                Enumerable<TDest> dest;
+                dest.value = { move_itr(itrBegin), move_itr(itrEnd) };
+                return dest;
+            }
+
             template <class TSource>
             struct skip_impl
             {
@@ -819,7 +783,7 @@ namespace macsignee {
                 return result;
             }
 
-          // no test
+            // no test
             // TakeWhile<TSource>(IEnumerable<TSource>, Func<TSource,Int32,Boolean>)
             auto TakeWhile(pred_idx_fn_type<value_type>&& predicate) {
                 Enumerable<TContainer> result;
@@ -1032,7 +996,7 @@ namespace macsignee {
 
             public:
                 template <class TSource, class TDest>
-                static void copy_distinct(TSource&& source, TDest& dest, eq_comp_fn_type<typename TSource::value_type>&& comparer) {
+                static void copy_distinct(TSource&& source, TDest& dest, ieq_comp_fn_type<typename TSource::value_type>&& comparer) {
                     if (comparer == nullptr) {
                         std::unordered_set<value_type> temp{};
                         for (auto elm : source) {
@@ -1042,7 +1006,7 @@ namespace macsignee {
                         }
                     }
                     else {
-                        EqualityComparer<typename TSource::value_type> eq(std::forward<eq_comp_fn_type<typename TSource::value_type>>(comparer));
+                        EqualityComparer<typename TSource::value_type> eq(std::forward<ieq_comp_fn_type<typename TSource::value_type>>(comparer));
                         for (auto elm : source) {
                             if (!eq.equals(elm, EqualityComparer<typename TSource::value_type>::add_if_not_found)) {
                                 emplace_(dest, std::forward<typename TSource::value_type>(elm));
@@ -1056,9 +1020,9 @@ namespace macsignee {
             struct distinct_impl
             {
                 using val_type = typename Value_Type<typename TSource::value_type>;
-                auto operator()(TSource&& source, eq_comp_fn_type<val_type>&& comparer) {
+                auto operator()(TSource&& source, ieq_comp_fn_type<val_type>&& comparer) {
                     Enumerable<TContainer> dest;
-                    distinct_inner::copy_distinct(std::forward<TContainer>(source), dest.value, std::forward<eq_comp_fn_type<val_type> >(comparer));
+                    distinct_inner::copy_distinct(std::forward<TContainer>(source), dest.value, std::forward<ieq_comp_fn_type<val_type> >(comparer));
                     return dest;
                 }
             };
@@ -1067,23 +1031,23 @@ namespace macsignee {
             struct distinct_impl<std::array<T, N>>
             {
                 using cont_type = typename std::array<T, N>;
-                auto operator()(std::array<T, N>&& source, eq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::array<T, N>&& source, ieq_comp_fn_type<T>&& comparer) {
                     auto dest = Enumerable::CreateVectorEnumerable<T>(N);
-                    distinct_inner::copy_distinct(std::forward<std::array<T, N>>(source), dest.value, std::forward<eq_comp_fn_type<T> >(comparer));
+                    distinct_inner::copy_distinct(std::forward<std::array<T, N>>(source), dest.value, std::forward<ieq_comp_fn_type<T> >(comparer));
                     return dest;
                 }
             };
 
             template <typename T, typename TComperer, typename TAllocator>
             struct distinct_impl<std::set<T, TComperer, TAllocator>> {
-                auto operator()(std::set<T, TComperer, TAllocator>&& source, eq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::set<T, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer) {
                     return Enumerable<std::set<T, TComperer, TAllocator>>(std::forward<std::set<T, TComperer, TAllocator>>(source));
                 }
             };
 
             template <typename T, typename THash, typename TComperer, typename TAllocator>
             struct distinct_impl<std::unordered_set<T, THash, TComperer, TAllocator>> {
-                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, eq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer) {
                     return Enumerable<std::unordered_set<T, THash, TComperer, TAllocator>>(std::forward<std::unordered_set<T, THash, TComperer, TAllocator>>(source));
                 }
             };
@@ -1091,7 +1055,7 @@ namespace macsignee {
             template <typename TKey, typename TValue, typename TComperer, typename TAllocator>
             struct distinct_impl<std::map<TKey, TValue, TComperer, TAllocator>> {
                 using val_type = typename Value_Type<typename std::map<TKey, TValue, TComperer, TAllocator>::value_type>;
-                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, eq_comp_fn_type<val_type>&& comparer) {
+                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer) {
                     return Enumerable<std::map<TKey, TValue, TComperer, TAllocator>>(std::forward<std::map<TKey, TValue, TComperer, TAllocator>>(source));
                 }
             };
@@ -1099,7 +1063,7 @@ namespace macsignee {
             template <typename TKey, typename TValue, typename THash, typename TComperer, typename TAllocator>
             struct distinct_impl<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>> {
                 using val_type = typename Value_Type<typename std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>::value_type>;
-                auto operator()(std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>&& source, eq_comp_fn_type<val_type>&& comparer) {
+                auto operator()(std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer) {
                     return Enumerable<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(std::forward<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(source));
                 }
             };
@@ -1108,7 +1072,7 @@ namespace macsignee {
             struct distinct_impl<std::forward_list<T, TAllocator>>
             {
                 using cont_type = std::forward_list<T, TAllocator>;
-                auto operator()(cont_type&& source, eq_comp_fn_type<T>&& comparer) {
+                auto operator()(cont_type&& source, ieq_comp_fn_type<T>&& comparer) {
                     Enumerable<std::forward_list<T, TAllocator>> dest(std::forward<cont_type>(source));
                     auto prev = std::begin(dest.value);
                     auto litr = prev;
@@ -1124,7 +1088,7 @@ namespace macsignee {
                         }
                     }
                     else {
-                        EqualityComparer<T> eq(std::forward<eq_comp_fn_type<T> >(comparer));
+                        EqualityComparer<T> eq(std::forward<ieq_comp_fn_type<T> >(comparer));
                         for (; litr != std::end(dest.value); ) {
                             if (!eq.equals(*litr, EqualityComparer<T>::add_if_not_found)) {
                                 prev = litr; ++litr;
@@ -1140,9 +1104,9 @@ namespace macsignee {
         public:
             // Distinct<TSource>(IEnumerable<TSource>)
             // Distinct<TSource>(IEnumerable<TSource>, IEqualityComparer<TSource>)
-            auto Distinct(eq_comp_fn_type<value_type>&& comparer = nullptr) {
+            auto Distinct(ieq_comp_fn_type<value_type>&& comparer = nullptr) {
                 auto distinct = distinct_impl<std::decay_t<decltype(value)>>();
-                return distinct(std::move(value), std::forward<eq_comp_fn_type<value_type> >(comparer));
+                return distinct(std::move(value), std::forward<ieq_comp_fn_type<value_type> >(comparer));
             }
 
             // below container will be converted to vector if elements collision
@@ -1528,7 +1492,7 @@ namespace macsignee {
 
             // Contains<TSource>(IEnumerable<TSource>, TSource)
             // Contains<TSource>(IEnumerable<TSource>, TSource, IEqualityComparer<TSource>)
-            bool Contains(const value_type& elm, eq_comp_fn_type<value_type>&& comparer
+            bool Contains(const value_type& elm, ieq_comp_fn_type<value_type>&& comparer
                 = std::equal_to<value_type>()) const {
                 if (!Any()) { return false; }
                 return std::find_if(std::cbegin(value), std::cend(value),
