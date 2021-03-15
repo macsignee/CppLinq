@@ -550,7 +550,6 @@ namespace macsignee {
             template <typename TKeySelector>
             auto OrderBy(TKeySelector&& keySelector) {
                 using key_type = decltype(keySelector(std::declval<value_type>()));
-                //auto compare_key = [&](const auto& lhs, const auto& rhs) {return comparer(keySelector(lhs), keySelector(rhs)) < 0; };
                 auto order_by = sort_impl<std::decay_t<decltype(value)>, key_type>();
                 return order_by(std::move(value), std::less<key_type>());
             }
@@ -798,6 +797,16 @@ namespace macsignee {
             //-------------------
             // reverse
 #pragma region reverse implementation
+            template <typename T>
+            struct has_reverse{
+                using dummy_type = int;
+            private:
+                template <typename U> static auto test(dummy_type) -> decltype(std::reverse(std::begin(std::declval<U>()), std::end(std::declval<U>())), std::true_type());
+                template <typename U> static auto test(...) -> decltype(std::false_type());
+            public:
+                static constexpr bool value = decltype(test<T>(0))::value || std::is_array<T>::value;
+            };
+
             template <class TSource>
             static auto copy_reverse(TSource&& source) {
                 Enumerable<TSource> dest(std::forward<TSource>(source));
@@ -1031,7 +1040,7 @@ namespace macsignee {
             struct distinct_impl<std::array<T, N>>
             {
                 using cont_type = typename std::array<T, N>;
-                auto operator()(std::array<T, N>&& source, ieq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::array<T, N>&& source, ieq_comp_fn_type<T>&& comparer = nullptr) {
                     auto dest = Enumerable::CreateVectorEnumerable<T>(N);
                     distinct_inner::copy_distinct(std::forward<std::array<T, N>>(source), dest.value, std::forward<ieq_comp_fn_type<T> >(comparer));
                     return dest;
@@ -1040,14 +1049,14 @@ namespace macsignee {
 
             template <typename T, typename TComperer, typename TAllocator>
             struct distinct_impl<std::set<T, TComperer, TAllocator>> {
-                auto operator()(std::set<T, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::set<T, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer = nullptr) {
                     return Enumerable<std::set<T, TComperer, TAllocator>>(std::forward<std::set<T, TComperer, TAllocator>>(source));
                 }
             };
 
             template <typename T, typename THash, typename TComperer, typename TAllocator>
             struct distinct_impl<std::unordered_set<T, THash, TComperer, TAllocator>> {
-                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer) {
+                auto operator()(std::unordered_set<T, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<T>&& comparer = nullptr) {
                     return Enumerable<std::unordered_set<T, THash, TComperer, TAllocator>>(std::forward<std::unordered_set<T, THash, TComperer, TAllocator>>(source));
                 }
             };
@@ -1055,16 +1064,20 @@ namespace macsignee {
             template <typename TKey, typename TValue, typename TComperer, typename TAllocator>
             struct distinct_impl<std::map<TKey, TValue, TComperer, TAllocator>> {
                 using val_type = typename Value_Type<typename std::map<TKey, TValue, TComperer, TAllocator>::value_type>;
-                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer) {
-                    return Enumerable<std::map<TKey, TValue, TComperer, TAllocator>>(std::forward<std::map<TKey, TValue, TComperer, TAllocator>>(source));
+                auto operator()(std::map<TKey, TValue, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer = nullptr) {
+                    return comparer == nullptr
+                        ? Enumerable<std::map<TKey, TValue, TComperer, TAllocator>>(std::forward<std::map<TKey, TValue, TComperer, TAllocator>>(source))
+                        : source;
                 }
             };
 
             template <typename TKey, typename TValue, typename THash, typename TComperer, typename TAllocator>
             struct distinct_impl<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>> {
                 using val_type = typename Value_Type<typename std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>::value_type>;
-                auto operator()(std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer) {
-                    return Enumerable<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(std::forward<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(source));
+                auto operator()(std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>&& source, ieq_comp_fn_type<val_type>&& comparer = nullptr) {
+                    return comparer == nullptr
+                        ? Enumerable<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(std::forward<std::unordered_map<TKey, TValue, THash, TComperer, TAllocator>>(source))
+                        : source;
                 }
             };
 
@@ -1552,7 +1565,7 @@ namespace macsignee {
 
             // All<TSource>(IEnumerable<TSource>, Func<TSource,bool>);
             bool All(pred_fn_type<value_type>&& predicate) const {
-                return std::all_of(std::cbegin(value), std::cend(value), predicate);
+                return Count() > 0 && std::all_of(std::cbegin(value), std::cend(value), predicate);
             }
 
             // ------------------------------------------------------------------------------------------------
@@ -1598,7 +1611,7 @@ namespace macsignee {
 
             template <class TData>
             static auto find_last(const TData& data, pred_fn_type<typename TData::value_type>&& predicate) {
-                nullable_t< TData::value_type> result;
+                nullable_t<TData::value_type> result;
                 if (size_(data) == 0)
                     return result;
                 auto itr = std::find_if(data.crbegin(), data.crend(), predicate);
@@ -1658,7 +1671,7 @@ namespace macsignee {
             };
         public:
             // first / first_or_default
-            // First<TSource>(IEnumerable<TSource>)
+// First<TSource>(IEnumerable<TSource>)
             auto First() const {
                 nullable_t<value_type> result{};
                 if (Count())
@@ -1667,7 +1680,7 @@ namespace macsignee {
             }
 
             // First<TSource>(IEnumerable<TSource>, Func<TSource, Boolean>)
-            auto First(pred_fn_type<value_type>&& predicate) const{
+            auto First(pred_fn_type<value_type>&& predicate) const {
                 nullable_t<value_type> result{};
                 if (Count() == 0)
                     return result;
@@ -1731,7 +1744,7 @@ namespace macsignee {
             // Single<TSource>(IEnumerable<TSource>, Func<TSource, Boolean>)
             auto Single(pred_fn_type<value_type>&& predicate) {
                 nullable_t<value_type> result{};
-                if (Count() == 0) 
+                if (Count() == 0)
                     return result;
                 auto itr = std::find_if(std::cbegin(value), std::cend(value), predicate);
                 if (itr != std::cend(value))
@@ -1758,7 +1771,7 @@ namespace macsignee {
             // ElementAt<TSource> (IEnumerable<TSource> source, int index);
             auto ElementAt(std::size_t index) const {
                 nullable_t<value_type> result{};
-                if (Count() == 0 || Count() <= index) 
+                if (Count() == 0 || Count() <= index)
                     return result;
                 result = *std::next(std::cbegin(value), index);
                 return result;
@@ -1772,13 +1785,13 @@ namespace macsignee {
             }
 
             // no test
-            value_type Aggregate(std::function<value_type(const value_type&, const value_type&)> accumulator) const {
+            auto Aggregate(std::function<value_type(const value_type&, const value_type&)> accumulator) const {
                 return std::accumulate(std::cbegin(value), std::cend(value), value_type(), accumulator);
             }
 
             // no test
             template <typename TAccumulate>
-            TAccumulate Aggregate(TAccumulate seed, std::function<TAccumulate(const TAccumulate&, const value_type&)> accumulater) const {
+            auto Aggregate(TAccumulate seed, std::function<TAccumulate(const TAccumulate&, const value_type&)> accumulater) const {
                 TAccumulate result = seed;
                 for (auto itr = std::cbegin(value); itr != std::cend(value); ++itr)
                     result = accumulater(result, *itr);

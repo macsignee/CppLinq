@@ -30,7 +30,7 @@ int main()
 
     RunTest(list_, "list", container_type::sequence);
 
-    RunTest(flist_, "forward_list", container_type::sequence);
+    RunTest(flist_, "forward_list", container_type::forward);
 
     RunTest(set_, "set", container_type::unique);
 
