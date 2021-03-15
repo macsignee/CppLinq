@@ -36,8 +36,10 @@ namespace macsignee {
         template <typename T>
         using nullable_t = std::optional<T>;
 #else
+        template <typename T>
         struct nullopt_t {};
-        static constexpr nullopt_t nullopt{  };
+        template <typename T>
+        static constexpr nullopt_t<T> nullopt{  };
 #pragma region optional compatible class
         template <typename T>
         struct nullable_t
@@ -53,7 +55,7 @@ namespace macsignee {
             nullable_t(nullable_t<T>&& source)  noexcept : has_value_(source.has_value_), value_(std::move(source.value_)) {}
 
             auto operator=(std::nullptr_t)&              { has_value_ = false;                 return *this; }
-            auto operator=(nullopt_t)&                   { has_value_ = false;                 return *this; }
+            auto operator=(nullopt_t<T>)&                { has_value_ = false;                 return *this; }
             auto operator=(const T& source)&             { has_value_ = true; value_ = source; return *this; }
             auto operator=(const nullable_t<T>& source)& {
                 has_value_ = source.has_value_;
@@ -92,9 +94,9 @@ namespace macsignee {
         template <typename T, typename U>
         constexpr bool operator==(const nullable_t<T>& x, const nullable_t<U>& y) { return x.has_value() == y.has_value() && x.value() == y.value(); }
         template <typename T>
-        constexpr bool operator==(const nullable_t<T>& x, nullopt_t) noexcept     { return !x.has_value(); }
+        constexpr bool operator==(const nullable_t<T>& x, nullopt_t<T>) noexcept  { return !x.has_value(); }
         template <typename T>
-        constexpr bool operator==(nullopt_t, const nullable_t<T>& y) noexcept     { return operator==(y, nullopt_t); }
+        constexpr bool operator==(nullopt_t<T>, const nullable_t<T>& y) noexcept  { return operator==(y, nullopt_t); }
         template <typename T, typename U>
         constexpr bool operator==(const nullable_t<T>& x, const U& y)             { return x.has_value() && y == x.value(); }
         template <typename T, typename U>
@@ -102,9 +104,9 @@ namespace macsignee {
         template <typename T, typename U>
         constexpr bool operator!=(const nullable_t<T>& x, const nullable_t<U>& y) { return !operator==(x, y); }
         template <typename T>
-        constexpr bool operator!=(const nullable_t<T>& x, nullopt_t) noexcept     { return !operator==(x, nullopt_t); }
+        constexpr bool operator!=(const nullable_t<T>& x, nullopt_t<T>) noexcept  { return !operator==(x, nullopt_t); }
         template <typename T>
-        constexpr bool operator!=(nullopt_t, const nullable_t<T>& y) noexcept     { return !operator==(nullopt_t, y); }
+        constexpr bool operator!=(nullopt_t<T>, const nullable_t<T>& y) noexcept  { return !operator==(nullopt_t, y); }
         template <typename T, typename U>
         constexpr bool operator!=(const nullable_t<T>& x, const U& y)             { return !operator==(x, y); }
         template <typename T, typename U>
@@ -1671,7 +1673,7 @@ namespace macsignee {
             };
         public:
             // first / first_or_default
-// First<TSource>(IEnumerable<TSource>)
+            // First<TSource>(IEnumerable<TSource>)
             auto First() const {
                 nullable_t<value_type> result{};
                 if (Count())
@@ -1691,14 +1693,12 @@ namespace macsignee {
                 return result;
             }
 
-            // no test
             // FirstOrDefault<TSource>(IEnumerable<TSource>)
             auto FirstOrDefault() const {
                 auto result = First();
                 return result.has_value() ? result.value() : value_type();
             }
 
-            // no test
             // FirstOrDefault<TSource>(IEnumerable<TSource>, Func<TSource,Boolean>)
             auto FirstOrDefault(pred_fn_type<value_type>&& predicate) const {
                 auto result = First(std::forward<pred_fn_type<value_type> >(predicate));
@@ -1718,14 +1718,12 @@ namespace macsignee {
                 return last(value, std::forward<pred_fn_type<value_type> >(predicate));
             }
 
-            // no test
             // LastOrDefault<TSource>(IEnumerable<TSource>)
             auto LastOrDefault() const {
                 auto result = Last();
                 return result.has_value() ? result.value() : value_type();
             }
 
-            // no test
             // LastOrDefault<TSource>(IEnumerable<TSource>, Func<TSource,Boolean>)
             auto LastOrDefault(pred_fn_type<value_type>&& predicate) const {
                 auto result = Last(std::forward<pred_fn_type<value_type> >(predicate));
@@ -1736,19 +1734,27 @@ namespace macsignee {
             // Single<TSource>(IEnumerable<TSource>)
             auto Single() const {
                 nullable_t<value_type> result{};
-                if (Count())
-                    result = *std::cbegin(value);
+                if (Count() != 1)
+                    return result;
+ 
+                result = *std::cbegin(value);
                 return result;
             }
 
             // Single<TSource>(IEnumerable<TSource>, Func<TSource, Boolean>)
-            auto Single(pred_fn_type<value_type>&& predicate) {
+            auto Single(pred_fn_type<value_type>&& predicate) const {
                 nullable_t<value_type> result{};
                 if (Count() == 0)
                     return result;
-                auto itr = std::find_if(std::cbegin(value), std::cend(value), predicate);
-                if (itr != std::cend(value))
-                    result = *itr;
+                const auto end = std::cend(value);
+                auto itr = std::find_if(std::cbegin(value), end, predicate);
+                while (itr != end) {
+                    if (!result.has_value())
+                        result = *itr;
+                    else
+                        return nullable_t<value_type>();
+                    itr = std::find_if(++itr, end, predicate);
+                }
                 return result;
             }
 
@@ -1760,14 +1766,12 @@ namespace macsignee {
                 return result.has_value() ? result.value() : value_type();
             }
 
-            // no test
             // SingleOrDefault<TSource>(IEnumerable<TSource>, Func<TSource,Boolean>)
             auto SingleOrDefault(pred_fn_type<value_type>&& predicate) const {
                 auto result = Single(std::forward<pred_fn_type<value_type> >(predicate));
                 return result.has_value() ? result.value() : value_type();
             }
 
-            // no test
             // ElementAt<TSource> (IEnumerable<TSource> source, int index);
             auto ElementAt(std::size_t index) const {
                 nullable_t<value_type> result{};
@@ -1777,7 +1781,6 @@ namespace macsignee {
                 return result;
             }
 
-            // no test
             // ElementAtOrDefault<TSource> (IEnumerable<TSource> source, int index);
             auto ElementAtOrDefault(std::size_t index) const {
                 auto result = ElementAt(index);
