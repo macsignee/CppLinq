@@ -1904,7 +1904,6 @@ namespace macsignee {
                 return result;
             }
 
-            //template <class TSource, typename T>
             template <class TSrc, class TDst>
             static auto CreateFilteredCopy(TSrc&& source, pred_fn_type<typename TSrc::value_type>&& predicate) {
                 auto result = Create<TDst>(size_(source));

@@ -1098,8 +1098,8 @@ namespace simple_test
     inline void RunTestSingle(TContainer& cont, std::string label, container_type target) {
         TContainer empty{};
 
-        TContainer single { 3 };
         using val_type = typename TContainer::value_type;
+        TContainer single { val_type() };
         {
             std::cout << "Single : no condition false any " << std::endl;
             auto n_1 = From(cont).Single();
@@ -1137,7 +1137,7 @@ namespace simple_test
             case container_type::hash_unique:
             case container_type::multi      :
             case container_type::hash_multi :
-            default                         : assert(checkValue(n_3.value(), 3)); break;
+            default                         : assert(checkValue(n_3.value(), val_type())); break;
             }
 
             std::cout << "Single : condition false empty" << std::endl;
@@ -1231,7 +1231,7 @@ namespace simple_test
             case container_type::hash_unique:
             case container_type::multi      :
             case container_type::hash_multi :
-            default                         : assert(checkValue(n_3, 3)); break;
+            default                         : assert(checkValue(n_3, val_type())); break;
             }
 
             std::cout << "SingleOrDefault : condition false empty" << std::endl;
