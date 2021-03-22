@@ -53,13 +53,18 @@ namespace macsignee
          
             enum class container_type
             {
-                sequence    = 1,    // vector, list, 
-                forward     = 2,    // forward_list
-                array       = 3,    // array [c style array]
-                unique      = 4,    // set, map
-                multi       = 5,    // multiset, multimap
-                hash_unique = 6,    // unordered_set, unordered_map
-                hash_multi  = 7,    // unordered_multiset, unordered_multimap
+                sequence    =  1,    // vector, list, 
+                forward     =  2,    // forward_list
+                array       =  3,    // array [c style array]
+                unique      =  4,    // set
+                multi       =  5,    // multiset
+                hash_unique =  6,    // unordered_set
+                hash_multi  =  7,    // unordered_multiset
+
+                keyValue    =  8,    // map
+                multi_kv    =  9,    // multimap
+                hash_kv     = 10,    // unordered_map
+                hash_mul_kv = 11,    // unordered_multimap
             };
 
             template <typename TContainer>

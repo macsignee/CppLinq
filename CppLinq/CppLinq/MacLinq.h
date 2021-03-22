@@ -538,8 +538,7 @@ namespace macsignee {
 
 #pragma endregion
         public:
-            //#define
-            // comp_fn_type
+            // OrderBy<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>, IComparer<TKey>)
             template <typename TKeySelector>
             auto OrderBy(TKeySelector&& keySelector, icomp_fn_type<decltype(keySelector(std::declval<value_type>()))>&& comparer) {
                 using key_type = decltype(keySelector(std::declval<value_type>()));
@@ -1148,10 +1147,10 @@ namespace macsignee {
 
             // Union<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
             // Union<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
-            using union_coparer = std::function<bool(const value_type&, const value_type&)>;
+            using union_comparer = std::function<bool(const value_type&, const value_type&)>;
 
             template <class TSecond>
-            auto Union(const TSecond& second, union_coparer comparer = std::less<Value_Type<value_type>>()) {
+            auto Union(const TSecond& second, union_comparer comparer = std::less<Value_Type<value_type>>()) {
                 static_assert(std::is_same_v<Value_Type<value_type>, Value_Type<TSecond::value_type>>, "cannnot union ");
                 auto result = Enumerable::CreateVectorEnumerable<Value_Type<value_type>>(Count() + size_(second));
                 std::set<value_type, decltype(comparer)> temp(comparer);
@@ -1162,7 +1161,7 @@ namespace macsignee {
             }
 
             template <class TSecond>
-            auto Union(const Enumerable<TSecond>& second, union_coparer predicate = std::less<Value_Type<value_type>>()) {
+            auto Union(const Enumerable<TSecond>& second, union_comparer predicate = std::less<Value_Type<value_type>>()) {
                 return Union(second.value, predicate);
             }
 
@@ -1180,8 +1179,8 @@ namespace macsignee {
 
             // Intersect<TSource>(IEnumerable<TSource>, IEnumerable<TSource>)
             template <class TSecond>
-            auto Interesect(const Enumerable<TSecond>& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
-                return Interesect(second.value, comparer);
+            auto Intersect(const Enumerable<TSecond>& second, std::function<bool(const value_type&, const value_type&)> comparer = std::less<value_type>()) {
+                return Intersect(second.value, comparer);
             }
 
             // Except<TSource>(IEnumerable<TSource>, IEnumerable<TSource>, IEqualityComparer<TSource>)
@@ -1500,7 +1499,7 @@ namespace macsignee {
                 return Enumerable<TContainer>();
             }
 
-            auto& ForEach(std::function<void(const value_type&)> predicate) { // データが変わらないので参照で返す
+            const auto& ForEach(std::function<void(const value_type&)> predicate) { // データが変わらないので参照で返す
                 std::for_each(std::cbegin(value), std::cend(value), predicate);
                 return *this;
             }
