@@ -39,4 +39,6 @@ int main()
     RunTest(mset_, "mutliset", container_type::multi);
 
     RunTest(umset_, "unordered_mutliset", container_type::hash_multi);
+
+    //RunTest(map_, "map", container_type::keyValue);
 }

@@ -142,7 +142,28 @@
     <ClCompile Include="CppLinq.Console.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="test_concat.h" />
+    <ClInclude Include="test_contains.h" />
+    <ClInclude Include="test_countAnyAll.h" />
+    <ClInclude Include="test_distinct.h" />
+    <ClInclude Include="test_elementAt.h" />
+    <ClInclude Include="test_except.h" />
+    <ClInclude Include="test_first.h" />
+    <ClInclude Include="test_intersect.h" />
+    <ClInclude Include="test_join.h" />
+    <ClInclude Include="test_orderBy.h" />
+    <ClInclude Include="test_reverse.h" />
+    <ClInclude Include="test_select.h" />
+    <ClInclude Include="testData.h" />
     <ClInclude Include="testFunc.h" />
+    <ClInclude Include="test_single.h" />
+    <ClInclude Include="test_skip.h" />
+    <ClInclude Include="test_take.h" />
+    <ClInclude Include="test_toCollection.h" />
+    <ClInclude Include="test_union.h" />
+    <ClInclude Include="test_where.h" />
+    <ClInclude Include="test_last.h" />
+    <ClInclude Include="test_zip.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
