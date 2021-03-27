@@ -305,7 +305,7 @@ namespace simple_test
 
 
             std::cout << "Single : condition false empty" << std::endl;
-            auto n_4 = From(empty).Single([](const auto& elm) {return elm == 3; });
+            auto n_4 = From(empty).Single([](const auto& elm) {return elm.first == 3; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -316,7 +316,7 @@ namespace simple_test
 
 
             std::cout << "Single : condition true" << std::endl;
-            auto n_5 = From(cont).Single([](const auto& elm) {return elm == 7; });
+            auto n_5 = From(cont).Single([](const auto& elm) {return elm.first == 7; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -326,7 +326,7 @@ namespace simple_test
             }
 
             std::cout << "Single : condition true none" << std::endl;
-            auto n_6 = From(empty).Single([](const auto& elm) {return elm == 99; });
+            auto n_6 = From(empty).Single([](const auto& elm) {return elm.first == 99; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -336,7 +336,7 @@ namespace simple_test
             }
 
             std::cout << "Single : condition true any" << std::endl;
-            auto n_7 = From(cont).Single([](const auto& elm) {return elm == 3; });
+            auto n_7 = From(cont).Single([](const auto& elm) {return elm.first == 3; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :

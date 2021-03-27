@@ -155,9 +155,9 @@ namespace simple_test
         RunTestAllKV(cont, label, target);
         RunTestFirstKV(cont, label, target);
         RunTestLastKV(cont, label, target);
-        //RunTestSingleKV(cont, label, target);
-        //RunTestElementAtKV(cont, label, target);
-        //RunTestReverseKV(cont, label, target);
+        RunTestSingleKV(cont, label, target);
+        RunTestElementAtKV(cont, label, target);
+        RunTestReverseKV(cont, label, target);
         //RunTestDistinctKV(cont, label, target);
         //RunTestConcatKV(cont, label, target);
         //RunTestUnionKV(cont, label, target);
