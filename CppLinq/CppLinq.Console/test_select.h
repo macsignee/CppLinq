@@ -111,7 +111,7 @@ namespace simple_test
     inline void RunTestSelectKV(TContainer& cont, std::string label, container_type target) {
         using val_type = typename TContainer::value_type;
         std::cout << "select " << std::endl;
-        auto n_1 = From(cont).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
+        auto n_1 = From(cont).Select([](const auto& elm) {return std::make_tuple(elm.first, elm.second, std::to_string(elm.second)); });
         switch (target) {
         case container_type::keyValue   :
         case container_type::multi_kv   :
@@ -122,7 +122,7 @@ namespace simple_test
 
         TContainer empty{};
         std::cout << "select empty" << std::endl;
-        auto n_1_ = From(empty).Select([](const auto& elm) {return std::make_tuple(elm, std::to_string(elm)); });
+        auto n_1_ = From(empty).Select([](const auto& elm) {return std::make_tuple(elm.first, elm.second, std::to_string(elm.second)); });
         switch (target) {
         case container_type::keyValue   :
         case container_type::multi_kv   :

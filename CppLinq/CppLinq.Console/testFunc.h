@@ -47,31 +47,76 @@ namespace simple_test
         std::cout << "sequence all " << std::endl;
         //auto n_1 = From(cont).SequenceEqual(From(deq_));
         switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
-        case container_type::unique:
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
+        case container_type::unique     :
         case container_type::hash_unique: break; //assert(checkBool(From(cont).SequenceEqual(From(set_)), true)); break;
-        case container_type::multi:
-        case container_type::hash_multi:  break; //assert(checkBool(From(cont).SequenceEqual(From(mset_)), true)); break;
-        default: assert(checkBool(From(cont).SequenceEqual(From(deq_)), true)); break;
+        case container_type::multi      :
+        case container_type::hash_multi :  break; //assert(checkBool(From(cont).SequenceEqual(From(mset_)), true)); break;
+        case container_type::sequence   :
+        case container_type::array      :
+        default                         : assert(checkBool(From(cont).SequenceEqual(From(deq_)), true)); break;
         }
 
         std::cout << "sequence all " << std::endl;
         auto n_2 = From(cont).SequenceEqual(From(set_));
         switch (target) {
-        //case target::sequence   :
-        //case target::array    : 
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
         case container_type::hash_unique:
-        case container_type::unique: break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
-        case container_type::hash_multi:
-        case container_type::multi: break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
-        default: assert(checkBool(n_2, false)); break;
+        case container_type::unique     : break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
+        case container_type::hash_multi :
+        case container_type::multi      : break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
+        case container_type::sequence   :
+        case container_type::array      :
+        default                         : assert(checkBool(n_2, false)); break;
         }
 #endif
     }
 
     template <typename TContainer>
-    void RunTest(TContainer& cont, std::string label, container_type target) {
+    inline void RunTestSequenceEqualKV(TContainer& cont, std::string label, container_type target) {
+#if FALSE
+        return; //not impllemented
+        std::cout << "sequence all " << std::endl;
+        //auto n_1 = From(cont).SequenceEqual(From(deq_));
+        switch (target) {
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
+        case container_type::unique     :
+        case container_type::hash_unique: break; //assert(checkBool(From(cont).SequenceEqual(From(set_)), true)); break;
+        case container_type::multi      :
+        case container_type::hash_multi :  break; //assert(checkBool(From(cont).SequenceEqual(From(mset_)), true)); break;
+        case container_type::sequence   :
+        case container_type::array      :
+        default                         : assert(checkBool(From(cont).SequenceEqual(From(deq_)), true)); break;
+        }
+
+        std::cout << "sequence all " << std::endl;
+        auto n_2 = From(cont).SequenceEqual(From(set_));
+        switch (target) {
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
+        case container_type::hash_unique:
+        case container_type::unique     : break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
+        case container_type::hash_multi :
+        case container_type::multi      : break; //assert(checkBool(From(cont).SequenceEqual(From(deq_)), false)); break;;
+        case container_type::sequence   :
+        case container_type::array      :
+        default                         : assert(checkBool(n_2, false)); break;
+        }
+#endif
+    }
+    template <typename TContainer>
+    inline void RunTest(TContainer& cont, std::string label, container_type target) {
         RunWhereTest(cont, label, target);
         RunTestSkip(cont, label, target);
         RunTestTake(cont, label, target);
@@ -97,31 +142,30 @@ namespace simple_test
         RunTestToCollection(cont, label, target);
     }
 
-    //template <typename TContainer>
-    //void RunTestKV(TContainer& cont, std::string label, container_type target) {
-    //    RunWhereTestKV(cont, label, target);
-    //    RunTestSkipKV(cont, label, target);
-    //    RunTestTakeKV(cont, label, target);
-    //    RunTestOrderByKV(cont, label, target);
-    //    RunTestSelectKV(cont, label, target);
-    //    RunTestContainsKV(cont, label, target);
-    //    RunTestCountKV(cont, label, target);
-    //    RunTestAnyKV(cont, label, target);
-    //    RunTestAllKV(cont, label, target);
-    //    RunTestFirstKV(cont, label, target);
-    //    RunTestLastKV(cont, label, target);
-    //    RunTestSingleKV(cont, label, target);
-    //    RunTestSingleKV(cont, label, target);
-    //    RunTestElementAtKV(cont, label, target);
-    //    RunTestReverseKV(cont, label, target);
-    //    RunTestDistinctKV(cont, label, target);
-    //    RunTestConcatKV(cont, label, target);
-    //    RunTestUnionKV(cont, label, target);
-    //    RunTestIntersectKV(cont, label, target);
-    //    RunTestExceptKV(cont, label, target);
-    //    RunTestZipKV(cont, label, target);
-    //    RunTestJoinKV(cont, label, target);
-    //    RunTestSequenceEqualKV(cont, label, target);
-    //    RunTestToCollectionKV(cont, label, target);
-    //}
+    template <typename TContainer>
+    inline void RunTestKV(TContainer& cont, std::string label, container_type target) {
+        RunWhereTestKV(cont, label, target);
+        RunTestSkipKV(cont, label, target);
+        RunTestTakeKV(cont, label, target);
+        //RunTestOrderByKV(cont, label, target);
+        RunTestSelectKV(cont, label, target);
+        RunTestContainsKV(cont, label, target);
+        RunTestCountKV(cont, label, target);
+        RunTestAnyKV(cont, label, target);
+        RunTestAllKV(cont, label, target);
+        RunTestFirstKV(cont, label, target);
+        RunTestLastKV(cont, label, target);
+        //RunTestSingleKV(cont, label, target);
+        //RunTestElementAtKV(cont, label, target);
+        //RunTestReverseKV(cont, label, target);
+        //RunTestDistinctKV(cont, label, target);
+        //RunTestConcatKV(cont, label, target);
+        //RunTestUnionKV(cont, label, target);
+        //RunTestIntersectKV(cont, label, target);
+        //RunTestExceptKV(cont, label, target);
+        //RunTestZipKV(cont, label, target);
+        //RunTestJoinKV(cont, label, target);
+        //RunTestSequenceEqualKV(cont, label, target);
+        RunTestToCollectionKV(cont, label, target);
+    }
 }

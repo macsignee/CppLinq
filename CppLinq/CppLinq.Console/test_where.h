@@ -168,7 +168,7 @@ namespace simple_test
     inline void RunWhereTestKV(TContainer& cont, std::string label, container_type target) {
         using val_type = typename TContainer::value_type;
         TContainer empty{};
-        auto lmb_ev = [](const auto& elm) {return elm % 2 == 0; };
+        auto lmb_ev = [](const auto& elm) {return elm.first % 2 == 0; };
 
         std::cout << "where " << std::endl;
         {
@@ -193,7 +193,7 @@ namespace simple_test
 
         std::cout << "where with index" << std::endl;
         {
-            auto n_2 = From(cont).Where([](const auto& elm, size_t index) {return elm % 2 == 1; });
+            auto n_2 = From(cont).Where([](const auto& elm, size_t index) {return elm.first % 2 == 1; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -205,7 +205,7 @@ namespace simple_test
 
         std::cout << "where with index empty" << std::endl;
         {
-            auto n_2_ = From(empty).Where([](const auto& elm, size_t index) {return elm % 2 == 1; });
+            auto n_2_ = From(empty).Where([](const auto& elm, size_t index) {return elm.first % 2 == 1; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -237,7 +237,7 @@ namespace simple_test
 
         std::cout << "where with index" << std::endl;
         {
-            auto n_2 = From(cont).Where([](const auto& elm, size_t index) {return elm % 2 == 1; });
+            auto n_2 = From(cont).Where([](const auto& elm, size_t index) {return elm.first % 2 == 1; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -249,7 +249,7 @@ namespace simple_test
 
         std::cout << "where with index empty" << std::endl;
         {
-            auto n_2_ = From(empty).Where([](const auto& elm, size_t index) {return elm % 2 == 1; });
+            auto n_2_ = From(empty).Where([](const auto& elm, size_t index) {return elm.first % 2 == 1; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :

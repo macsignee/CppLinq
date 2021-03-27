@@ -25,6 +25,10 @@ namespace simple_test
             std::cout << "ElementAt : condition true" << std::endl;
             auto n_7 = From(cont).ElementAt(2);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::unique     : assert(checkValue(n_7.value(), 3)); break;
             case container_type::hash_unique: assert(checkUniqueValue<TContainer>(n_7.value(), set_)); break;
             case container_type::multi      :
@@ -38,6 +42,10 @@ namespace simple_test
             std::cout << "ElementAt : condition true empty" << std::endl;
             auto n_7_ = From(empty).ElementAt(2);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::array      : assert(checkValue(n_7_.value(), 0)); break;
             case container_type::sequence   :
             case container_type::forward    :
@@ -51,6 +59,10 @@ namespace simple_test
             std::cout << "ElementAt : condition false" << std::endl;
             auto n_8 = From(cont).ElementAt(34);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -64,6 +76,10 @@ namespace simple_test
             std::cout << "ElementAt : condition false empty" << std::endl;
             auto n_8_ = From(empty).ElementAt(10);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::array      : assert(checkValue(n_8_.value(), 0)); break;
             case container_type::sequence   :
             case container_type::forward    :
@@ -79,6 +95,10 @@ namespace simple_test
             std::cout << "ElementAtOrDefault : condition true" << std::endl;
             auto n_7 = From(cont).ElementAtOrDefault(2);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::unique     : assert(checkValue(n_7, 3)); break;
             case container_type::hash_unique: assert(checkUniqueValue<TContainer>(n_7, set_)); break;
             case container_type::multi      :
@@ -92,6 +112,10 @@ namespace simple_test
             std::cout << "ElementAtOrDefault : condition true empty" << std::endl;
             auto n_7_ = From(empty).ElementAtOrDefault(2);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -105,6 +129,10 @@ namespace simple_test
             std::cout << "ElementAtOrDefault : condition false" << std::endl;
             auto n_8 = From(cont).ElementAtOrDefault(34);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -118,6 +146,10 @@ namespace simple_test
             std::cout << "ElementAtOrDefault : condition false empty" << std::endl;
             auto n_8_ = From(empty).ElementAtOrDefault(10);
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::array      :
             case container_type::forward    :
@@ -132,4 +164,95 @@ namespace simple_test
         //std::for_each(n_H.begin(), n_H.end(), [](auto one) {std::cout << one << std::endl; });
     }
 
+        template <typename TContainer>
+    inline void RunTestElementAtKV(TContainer& cont, std::string label, container_type target) {
+        TContainer empty{};
+
+        using val_type = typename TContainer::value_type;
+        {
+            std::cout << "ElementAt : condition true" << std::endl;
+            auto n_7 = From(cont).ElementAt(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAt : condition true empty" << std::endl;
+            auto n_7_ = From(empty).ElementAt(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAt : condition false" << std::endl;
+            auto n_8 = From(cont).ElementAt(34);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAt : condition false empty" << std::endl;
+            auto n_8_ = From(empty).ElementAt(10);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+        }
+
+        {
+            std::cout << "ElementAtOrDefault : condition true" << std::endl;
+            auto n_7 = From(cont).ElementAtOrDefault(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAtOrDefault : condition true empty" << std::endl;
+            auto n_7_ = From(empty).ElementAtOrDefault(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAtOrDefault : condition false" << std::endl;
+            auto n_8 = From(cont).ElementAtOrDefault(34);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "ElementAtOrDefault : condition false empty" << std::endl;
+            auto n_8_ = From(empty).ElementAtOrDefault(10);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+        }
+        //auto n_H = From(cont).DefaultIfEmpty();
+        //std::for_each(n_H.begin(), n_H.end(), [](auto one) {std::cout << one << std::endl; });
+    }
 }

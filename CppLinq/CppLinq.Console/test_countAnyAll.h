@@ -281,7 +281,7 @@ namespace simple_test
 
         {
             std::cout << "Any : Condition true " << std::endl;
-            auto n_A2 = From(cont).Any([](const auto& elm) {return elm == 2; });
+            auto n_A2 = From(cont).Any([](const auto& elm) {return elm.first == 2; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -294,7 +294,7 @@ namespace simple_test
 
         {
             std::cout << "Any : Condition true empty" << std::endl;
-            auto n_A2_ = From(empty).Any([](const auto& elm) {return elm == 2; });
+            auto n_A2_ = From(empty).Any([](const auto& elm) {return elm.first == 2; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -306,7 +306,7 @@ namespace simple_test
 
         {
             std::cout << "Any : Condition false" << std::endl;
-            auto n_A3 = From(cont).Any([](const auto& elm) {return elm == 31; });
+            auto n_A3 = From(cont).Any([](const auto& elm) {return elm.first == 31; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -318,12 +318,12 @@ namespace simple_test
     }
 
     template <typename TContainer>
-    inline void RunTestAllLV(TContainer& cont, std::string label, container_type target) {
+    inline void RunTestAllKV(TContainer& cont, std::string label, container_type target) {
 
         TContainer empty{};
         {
             std::cout << "All : Condition true " << std::endl;
-            auto n_A2 = From(cont).All([](const auto& elm) {return elm > 0; });
+            auto n_A2 = From(cont).All([](const auto& elm) {return elm.first > 0; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -335,7 +335,7 @@ namespace simple_test
 
         {
             std::cout << "All : Condition true empty" << std::endl;
-            auto n_A2_ = From(empty).All([](const auto& elm) {return elm > 0; });
+            auto n_A2_ = From(empty).All([](const auto& elm) {return elm.first > 0; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :
@@ -347,7 +347,7 @@ namespace simple_test
 
         {
             std::cout << "All : Condition false" << std::endl;
-            auto n_A3 = From(cont).All([](const auto& elm) {return elm < 0; });
+            auto n_A3 = From(cont).All([](const auto& elm) {return elm.first < 0; });
             switch (target) {
             case container_type::keyValue   :
             case container_type::multi_kv   :

@@ -25,6 +25,10 @@ namespace simple_test
             std::cout << "Last : no condition" << std::endl;
             auto n_1 = From(cont).Last();
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::hash_unique:
             case container_type::hash_multi : assert(checkValue(n_1.value(), 7)); break;
             case container_type::unique     :
@@ -38,6 +42,10 @@ namespace simple_test
             std::cout << "Last : no condition empty" << std::endl;
             auto n_2 = From(empty).Last();
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::array      : assert(n_2.value() == 0); break;
             case container_type::sequence   :
             case container_type::forward    :
@@ -51,6 +59,10 @@ namespace simple_test
             std::cout << "Last : condition true" << std::endl;
             auto n_5 = From(cont).Last([](const auto& elm) {return elm == 3; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::unique     :
             case container_type::hash_unique: assert(checkUniqueValue<TContainer>(n_5.value(), set_)); break;
             case container_type::multi      :
@@ -64,6 +76,10 @@ namespace simple_test
             std::cout << "Last : condition true empty" << std::endl;
             auto n_2_ = From(empty).Last([](const auto& elm) {return elm == 3; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -77,6 +93,10 @@ namespace simple_test
             std::cout << "Last : condition false" << std::endl;
             auto n_6 = From(cont).Last([](const auto& elm) {return elm == -1; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -90,6 +110,10 @@ namespace simple_test
             std::cout << "Last : condition false empty" << std::endl;
             auto n_3_ = From(empty).Last([](const auto& elm) {return elm == 65; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -105,6 +129,10 @@ namespace simple_test
             std::cout << "LastOrDefault : no condition" << std::endl;
             auto n_1 = From(cont).LastOrDefault();
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::unique     : assert(checkValue(n_1, 9)); break;
             case container_type::hash_unique: assert(checkUniqueValue<TContainer>(n_1, set_)); break;
             case container_type::multi      :
@@ -118,6 +146,10 @@ namespace simple_test
             std::cout << "LastOrDefault : no condition empty" << std::endl;
             auto n_2 = From(empty).LastOrDefault();
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -131,6 +163,10 @@ namespace simple_test
             std::cout << "LastOrDefault : condition true" << std::endl;
             auto n_5 = From(cont).LastOrDefault([](const auto& elm) {return elm == 3; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::unique     :
             case container_type::hash_unique: assert(checkUniqueValue<TContainer>(n_5, set_)); break;
             case container_type::multi      :
@@ -144,6 +180,10 @@ namespace simple_test
             std::cout << "LastOrDefault : condition true empty" << std::endl;
             auto n_2_ = From(empty).LastOrDefault([](const auto& elm) {return elm == 3; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -158,6 +198,10 @@ namespace simple_test
             std::cout << "LastOrDefault : condition false" << std::endl;
             auto n_6 = From(cont).LastOrDefault([](const auto& elm) {return elm == -1; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -171,6 +215,10 @@ namespace simple_test
             std::cout << "LastOrDefault : condition false empty" << std::endl;
             auto n_3_ = From(empty).LastOrDefault([](const auto& elm) {return elm == 65; });
             switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
             case container_type::sequence   :
             case container_type::forward    :
             case container_type::array      :
@@ -180,6 +228,139 @@ namespace simple_test
             case container_type::hash_multi :
             default                         : assert(checkValue(n_3_, val_type())); break;
             }
+        }
+    }
+
+        template <typename TContainer>
+    inline void RunTestLastKV(TContainer& cont, std::string label, container_type target) {
+        TContainer empty{};
+
+        using val_type = typename TContainer::value_type;
+        {
+            std::cout << "Last : no condition" << std::endl;
+            auto n_1 = From(cont).Last();
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "Last : no condition empty" << std::endl;
+            auto n_2 = From(empty).Last();
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "Last : condition true" << std::endl;
+            auto n_5 = From(cont).Last([](const auto& elm) {return elm.first == 3; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "Last : condition true empty" << std::endl;
+            auto n_2_ = From(empty).Last([](const auto& elm) {return elm.first == 3; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "Last : condition false" << std::endl;
+            auto n_6 = From(cont).Last([](const auto& elm) {return elm.first == -1; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+
+            std::cout << "Last : condition false empty" << std::endl;
+            auto n_3_ = From(empty).Last([](const auto& elm) {return elm.first == 65; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+        }
+
+        {
+            std::cout << "LastOrDefault : no condition" << std::endl;
+            auto n_1 = From(cont).LastOrDefault();
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+
+            std::cout << "LastOrDefault : no condition empty" << std::endl;
+            auto n_2 = From(empty).LastOrDefault();
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "LastOrDefault : condition true" << std::endl;
+            auto n_5 = From(cont).LastOrDefault([](const auto& elm) {return elm.first == 3; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "LastOrDefault : condition true empty" << std::endl;
+            auto n_2_ = From(empty).LastOrDefault([](const auto& elm) {return elm.first == 3; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "LastOrDefault : condition false" << std::endl;
+            auto n_6 = From(cont).LastOrDefault([](const auto& elm) {return elm.first == -1; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
+            std::cout << "LastOrDefault : condition false empty" << std::endl;
+            auto n_3_ = From(empty).LastOrDefault([](const auto& elm) {return elm.first == 65; });
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+
         }
     }
 }

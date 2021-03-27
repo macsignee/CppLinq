@@ -23,6 +23,10 @@ namespace simple_test
         std::cout << "skip " << std::endl;
         auto n_1 = From(cont).Skip(2);
         switch (target) {
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
         case container_type::unique     :
         case container_type::hash_unique: assert(checkUnique(n_1, set_, 7)); break;
         case container_type::multi      :
@@ -37,6 +41,10 @@ namespace simple_test
         std::cout << "skip empty" << std::endl;
         auto n_1_ = From(empty).Skip(2);
         switch (target) {
+        case container_type::keyValue   :
+        case container_type::multi_kv   :
+        case container_type::hash_kv    :
+        case container_type::hash_mul_kv: assert(false);  break;
         case container_type::array      : assert(checkArray(n_1_, { 0,0,0,0,0,0,0,0,0,0, 0 })); break;
         case container_type::unique     :
         case container_type::hash_unique:
@@ -45,6 +53,36 @@ namespace simple_test
         case container_type::sequence   :
         case container_type::forward    :
         default                         : assert(checkArray(n_1_, {})); break;
+        }
+    }
+
+    template <typename TContainer>
+    inline void RunTestSkipKV(TContainer& cont, std::string label, container_type target) {
+        using val_type = typename TContainer::value_type;
+
+        std::cout << "skip " << std::endl;
+        {
+            auto n_ = From(cont).Skip(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
+        }
+
+        std::cout << "skip empty" << std::endl;
+        TContainer empty{};
+        {
+            auto n_ = From(empty).Skip(2);
+            switch (target) {
+            case container_type::keyValue   :
+            case container_type::multi_kv   :
+            case container_type::hash_kv    :
+            case container_type::hash_mul_kv: assert(false);  break;
+            default                         : assert(false);  break;
+            }
         }
     }
 }

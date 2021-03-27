@@ -135,7 +135,7 @@ namespace macsignee {
         public:
             //-------------------------------------
             // attributes
-            using value_type = value_t<typename TContainer::value_type>;
+            using value_type = typename TContainer::value_type;
             TContainer value;
         private:
             //----------------------------------------
@@ -371,7 +371,7 @@ namespace macsignee {
             template <typename T, typename TAllocator>
             struct where_impl<std::deque<T, TAllocator>>
             {
-                using cont_type = typename std::deq ue<T, TAllocator>;
+                using cont_type = typename std::deque<T, TAllocator>;
                 auto operator()(cont_type&& source, pred_fn_type<T>&& predicate) {
                     return copy_filtered_v<cont_type, T>(std::forward<cont_type>(source), std::forward<pred_fn_type<T> >(predicate));
                 }

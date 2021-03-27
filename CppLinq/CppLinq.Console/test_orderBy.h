@@ -194,7 +194,7 @@ namespace simple_test
         auto lmb_lt = [](const auto& lhs, const auto& rhs) {return lhs > rhs; };
 
         std::cout << "orderBy " << std::endl;
-        auto n_1 = From(cont).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
+        auto n_1 = From(cont).OrderBy([](const auto& elm) {return (double)elm.second; }, [](const auto& lhs, const auto& rhs) {
             return lhs > rhs ? -1 : 1; });
         switch (target) {
         case container_type::keyValue   :
@@ -206,8 +206,8 @@ namespace simple_test
 
         TContainer empty{};
         std::cout << "orderBy Empty" << std::endl;
-        auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm; }, [](const auto& lhs, const auto& rhs) {
-            return lhs > rhs; });
+        auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm.second; }, [](const auto& lhs, const auto& rhs) {
+            return lhs.first > rhs.first; });
         switch (target) {
         case container_type::keyValue   :
         case container_type::multi_kv   :
