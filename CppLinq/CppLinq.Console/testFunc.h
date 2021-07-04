@@ -42,7 +42,7 @@ namespace simple_test
 
     template <typename TContainer>
     inline void RunTestSequenceEqual(TContainer& cont, std::string label, container_type target) {
-#if FALSE
+
         return; //not impllemented
         std::cout << "sequence all " << std::endl;
         //auto n_1 = From(cont).SequenceEqual(From(deq_));
@@ -75,7 +75,7 @@ namespace simple_test
         case container_type::array      :
         default                         : assert(checkBool(n_2, false)); break;
         }
-#endif
+
     }
 
     template <typename TContainer>
@@ -120,7 +120,7 @@ namespace simple_test
         RunWhereTest(cont, label, target);
         RunTestSkip(cont, label, target);
         RunTestTake(cont, label, target);
-        RunTestOrderBy(cont, label, target);
+        //RunTestOrderBy(cont, label, target);
         RunTestSelect(cont, label, target);
         RunTestContains(cont, label, target);
         RunTestCount(cont, label, target);
@@ -138,7 +138,7 @@ namespace simple_test
         RunTestExcept(cont, label, target);
         RunTestZip(cont, label, target);
         RunTestJoin(cont, label, target);
-        RunTestSequenceEqual(cont, label, target);
+        //RunTestSequenceEqual(cont, label, target);
         RunTestToCollection(cont, label, target);
     }
 

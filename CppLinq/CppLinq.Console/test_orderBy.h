@@ -191,11 +191,12 @@ namespace simple_test
     inline void RunTestOrderByKV(TContainer& cont, std::string label, container_type target) {
         using val_type = typename TContainer::value_type;
         auto lmb_rt = [](const auto& elm) {return elm; };
-        auto lmb_lt = [](const auto& lhs, const auto& rhs) {return lhs > rhs; };
+        auto lmb_lt = [](const auto& lhs, const auto& rhs) {return lhs.first < rhs.first; };
 
         std::cout << "orderBy " << std::endl;
-        auto n_1 = From(cont).OrderBy([](const auto& elm) {return (double)elm.second; }, [](const auto& lhs, const auto& rhs) {
-            return lhs > rhs ? -1 : 1; });
+        auto n_1 = From(cont).OrderBy(
+            [&](const auto& elm) {return (double)elm.second; },
+            [&](const auto& lhs, const auto& rhs) { return lhs > rhs ? -1 : 1; });
         switch (target) {
         case container_type::keyValue   :
         case container_type::multi_kv   :
@@ -204,97 +205,97 @@ namespace simple_test
         default                         : assert(false);  break;
         }
 
-        TContainer empty{};
-        std::cout << "orderBy Empty" << std::endl;
-        auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm.second; }, [](const auto& lhs, const auto& rhs) {
-            return lhs.first > rhs.first; });
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //TContainer empty{};
+        //std::cout << "orderBy Empty" << std::endl;
+        //auto n_1_ = From(empty).OrderBy([](const auto& elm) {return (double)elm.second; }, [](const auto& lhs, const auto& rhs) {
+        //    return lhs > rhs ? -1 : 1; });
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "orderBy elm" << std::endl;
-        auto n_2 = From(cont).OrderBy(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "orderBy elm" << std::endl;
+        //auto n_2 = From(cont).OrderBy(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "orderBy elm empty" << std::endl;
-        auto n_2_ = From(empty).OrderBy(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
-        
-        std::cout << "orderByDescending elm" << std::endl;
-        auto n_3 = From(cont).OrderByDescending(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "orderBy elm empty" << std::endl;
+        //auto n_2_ = From(empty).OrderBy(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
+        //
+        //std::cout << "orderByDescending elm" << std::endl;
+        //auto n_3 = From(cont).OrderByDescending(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
 
-        std::cout << "orderByDescending elm empty" << std::endl;
-        auto n_3_ = From(empty).OrderByDescending(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "orderByDescending elm empty" << std::endl;
+        //auto n_3_ = From(empty).OrderByDescending(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "thenBy elm" << std::endl;
-        auto n_4 = From(cont).ThenBy(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "thenBy elm" << std::endl;
+        //auto n_4 = From(cont).ThenBy(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "thenByDescending elm" << std::endl;
-        auto n_5 = From(cont).ThenByDescending(lmb_rt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "thenByDescending elm" << std::endl;
+        //auto n_5 = From(cont).ThenByDescending(lmb_rt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "sortBy " << std::endl;
-        auto n_6 = From(cont).SortBy(lmb_lt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "sortBy " << std::endl;
+        //auto n_6 = From(cont).SortBy(lmb_lt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
 
-        std::cout << "sortBy empty" << std::endl;
-        auto n_6_ = From(empty).SortBy(lmb_lt);
-        switch (target) {
-        case container_type::keyValue   :
-        case container_type::multi_kv   :
-        case container_type::hash_kv    :
-        case container_type::hash_mul_kv: assert(false);  break;
-        default                         : assert(false);  break;
-        }
+        //std::cout << "sortBy empty" << std::endl;
+        //auto n_6_ = From(empty).SortBy(lmb_lt);
+        //switch (target) {
+        //case container_type::keyValue   :
+        //case container_type::multi_kv   :
+        //case container_type::hash_kv    :
+        //case container_type::hash_mul_kv: assert(false);  break;
+        //default                         : assert(false);  break;
+        //}
     }
 }
